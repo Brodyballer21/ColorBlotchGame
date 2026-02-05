@@ -1240,6 +1240,9 @@
         async function saveGameData() {
             if (!currentUser) return;
             
+            const syncStatus = document.getElementById('sync-status');
+            syncStatus.textContent = 'Saving...';
+            
             try {
                 const userRef = db.collection('users').doc(currentUser.uid);
                 await userRef.set({
@@ -1256,11 +1259,11 @@
                     lastSaved: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
-                document.getElementById('sync-status').textContent = 'Synced ✓';
+                syncStatus.textContent = 'Synced ✓';
                 console.log('Game data saved to cloud');
             } catch (error) {
                 console.error('Error saving game data:', error);
-                document.getElementById('sync-status').textContent = 'Sync failed ✗';
+                syncStatus.textContent = 'Sync failed ✗';
             }
         }
 
@@ -1338,12 +1341,12 @@
             }
         });
 
-        // Auto-save game data every 30 seconds if logged in
+        // Auto-save game data every 5 seconds if logged in
         setInterval(() => {
             if (currentUser) {
                 saveGameData();
             }
-        }, 30000);
+        }, 5000); // Save every 5 seconds
 
         // ===== GAME FUNCTIONS =====
         
@@ -1643,6 +1646,11 @@
                 favorites.add(rollNumber);
             }
             updateStorageDisplay();
+            
+            // Save after favoriting
+            if (currentUser) {
+                saveGameData();
+            }
         }
 
         function updateDeleteButtons() {
@@ -1815,6 +1823,11 @@
                 colorCoins -= 100;
                 luckBoostActive = true;
                 updateStats();
+                
+                // Save after spending coins
+                if (currentUser) {
+                    saveGameData();
+                }
             }
         });
 
