@@ -660,8 +660,80 @@
             background: rgba(255,255,255,0.3);
         }
 
+        .manual-save-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+            margin-left: 10px;
+        }
+
+        .manual-save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.4);
+        }
+
+        .manual-save-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .sync-status {
             font-size: 0.7em;
+            opacity: 0.9;
+        }
+
+        /* Manual Save Button - Top Left */
+        .save-button-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            border-radius: 10px;
+            display: none; /* Hidden by default, shown when logged in */
+        }
+
+        .save-button-container.show {
+            display: block;
+        }
+
+        .big-save-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: block;
+            width: 100%;
+        }
+
+        .big-save-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(76, 175, 80, 0.5);
+        }
+
+        .big-save-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .save-status {
+            margin-top: 8px;
+            text-align: center;
+            font-size: 0.85em;
             opacity: 0.9;
         }
 
@@ -758,6 +830,12 @@
     </style>
 </head>
 <body>
+    <!-- Manual Save Button - Top Left -->
+    <div class="save-button-container" id="save-container">
+        <button class="big-save-btn" id="big-save-btn">💾 SAVE PROGRESS</button>
+        <div class="save-status" id="save-status">Not saved</div>
+    </div>
+
     <!-- Secret Rare Celebration Overlay -->
     <div class="secret-rare-celebration" id="celebration-overlay">
         <div class="celebration-flash"></div>
@@ -782,9 +860,10 @@
                 <img id="user-avatar" class="user-avatar" src="" alt="User">
                 <div>
                     <div class="user-name" id="user-name"></div>
-                    <div class="sync-status" id="sync-status">Synced ✓</div>
+                    <div class="sync-status" id="sync-status">Not saved</div>
                 </div>
             </div>
+            <button class="manual-save-btn" id="manual-save-btn">💾 Save</button>
             <button class="sign-out-btn" id="sign-out-btn">Sign Out</button>
         </div>
     </div>
@@ -1240,7 +1319,10 @@
         async function saveGameData() {
             if (!currentUser) return;
             
+            const saveStatus = document.getElementById('save-status');
             const syncStatus = document.getElementById('sync-status');
+            
+            saveStatus.textContent = 'Saving...';
             syncStatus.textContent = 'Saving...';
             
             try {
@@ -1259,11 +1341,14 @@
                     lastSaved: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
-                syncStatus.textContent = 'Synced ✓';
+                const now = new Date().toLocaleTimeString();
+                saveStatus.textContent = `Saved ${now}`;
+                syncStatus.textContent = `Saved ${now}`;
                 console.log('Game data saved to cloud');
             } catch (error) {
                 console.error('Error saving game data:', error);
-                syncStatus.textContent = 'Sync failed ✗';
+                saveStatus.textContent = 'Save failed ✗';
+                syncStatus.textContent = 'Save failed ✗';
             }
         }
 
@@ -1289,9 +1374,12 @@
                     updateStorageDisplay();
                     
                     console.log('Game data loaded from cloud');
-                    document.getElementById('sync-status').textContent = 'Loaded ✓';
+                    document.getElementById('save-status').textContent = 'Loaded from cloud';
+                    document.getElementById('sync-status').textContent = 'Loaded from cloud';
                 } else {
                     console.log('No saved data found, starting fresh');
+                    document.getElementById('save-status').textContent = 'No save data';
+                    document.getElementById('sync-status').textContent = 'No save data';
                 }
             } catch (error) {
                 console.error('Error loading game data:', error);
@@ -1302,6 +1390,7 @@
         auth.onAuthStateChanged(async (user) => {
             const signedInView = document.getElementById('signed-in-view');
             const signedOutView = document.getElementById('signed-out-view');
+            const saveContainer = document.getElementById('save-container');
             
             if (user) {
                 currentUser = user;
@@ -1312,12 +1401,18 @@
                 signedInView.style.display = 'flex';
                 signedOutView.style.display = 'none';
                 
+                // Show save button
+                saveContainer.classList.add('show');
+                
                 // Load saved game data
                 await loadGameData();
             } else {
                 currentUser = null;
                 signedInView.style.display = 'none';
                 signedOutView.style.display = 'block';
+                
+                // Hide save button
+                saveContainer.classList.remove('show');
             }
         });
 
@@ -1341,12 +1436,29 @@
             }
         });
 
-        // Auto-save game data every 5 seconds if logged in
-        setInterval(() => {
-            if (currentUser) {
-                saveGameData();
-            }
-        }, 5000); // Save every 5 seconds
+        // Manual save button
+        document.getElementById('manual-save-btn').addEventListener('click', async () => {
+            const saveBtn = document.getElementById('manual-save-btn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = '💾 Saving...';
+            
+            await saveGameData();
+            
+            saveBtn.disabled = false;
+            saveBtn.textContent = '💾 Save';
+        });
+
+        // Big save button in top left
+        document.getElementById('big-save-btn').addEventListener('click', async () => {
+            const saveBtn = document.getElementById('big-save-btn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = '💾 SAVING...';
+            
+            await saveGameData();
+            
+            saveBtn.disabled = false;
+            saveBtn.textContent = '💾 SAVE PROGRESS';
+        });
 
         // ===== GAME FUNCTIONS =====
         
@@ -1646,11 +1758,6 @@
                 favorites.add(rollNumber);
             }
             updateStorageDisplay();
-            
-            // Save after favoriting
-            if (currentUser) {
-                saveGameData();
-            }
         }
 
         function updateDeleteButtons() {
@@ -1809,11 +1916,6 @@
             updateStats();
             updateStorageDisplay();
             
-            // Auto-save after each roll if logged in
-            if (currentUser) {
-                saveGameData();
-            }
-            
             // Debug: Log lucky number info (remove this later if you don't want to see it)
             console.log(`Roll #${totalRolls} | Next lucky roll: #${luckyNumber} | Was lucky: ${tierInfo.wasLucky || false}`);
         });
@@ -1823,11 +1925,6 @@
                 colorCoins -= 100;
                 luckBoostActive = true;
                 updateStats();
-                
-                // Save after spending coins
-                if (currentUser) {
-                    saveGameData();
-                }
             }
         });
 
@@ -1882,11 +1979,6 @@
                 showCoinReward(totalCoins);
                 updateStats();
                 updateStorageDisplay();
-                
-                // Auto-save after deletion if logged in
-                if (currentUser) {
-                    saveGameData();
-                }
             }
         });
 
