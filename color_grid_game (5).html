@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Grid Gacha</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .game-stats {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .roll-section {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .roll-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 20px 50px;
+            font-size: 1.5em;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            margin: 20px 0;
+        }
+
+        .roll-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+
+        .roll-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .roll-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .boost-btn {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #000;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            margin: 10px;
+            font-weight: bold;
+        }
+
+        .boost-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+
+        .boost-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #666;
+        }
+
+        .boost-active {
+            background: rgba(255, 215, 0, 0.2);
+            border: 3px solid #FFD700;
+            animation: glow 1.5s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.8); }
+        }
+
+        .boost-indicator {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin: 10px 0;
+            display: inline-block;
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        .grid-preview {
+            margin: 20px auto;
+            display: inline-block;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(40, 8px);
+            gap: 0;
+        }
+
+        .grid-cell {
+            width: 8px;
+            height: 8px;
+        }
+
+        .tier-info {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .tier-item {
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tier-name {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .tier-range {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .storage-section {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .storage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .filter-section {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .filter-btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .filter-btn.active {
+            background: rgba(255,255,255,0.4);
+            border-color: rgba(255,255,255,0.6);
+            font-weight: bold;
+        }
+
+        .delete-mode-btn {
+            background: linear-gradient(135deg, #ff4757 0%, #ff6348 100%);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .delete-mode-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255,71,87,0.4);
+        }
+
+        .delete-mode-btn.active {
+            background: linear-gradient(135deg, #ee5a6f 0%, #f79f79 100%);
+        }
+
+        .bulk-delete-btn {
+            background: linear-gradient(135deg, #ff4757 0%, #ff6348 100%);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .bulk-delete-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255,71,87,0.4);
+        }
+
+        .storage-section {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .storage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .storage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .storage-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .storage-item:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.05);
+        }
+
+        .storage-item.delete-mode {
+            cursor: pointer;
+        }
+
+        .storage-item.selected {
+            background: rgba(255,71,87,0.3);
+            border: 2px solid #ff4757;
+        }
+
+        .delete-icon {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #ff4757;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .storage-item.delete-mode .delete-icon {
+            display: flex;
+        }
+
+        .storage-item.selected .delete-icon {
+            background: #ee5a6f;
+        }
+
+        .storage-item.cannot-delete {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .storage-item.cannot-delete:hover {
+            transform: none;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .favorite-star {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(255, 215, 0, 0.9);
+            color: #000;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 5;
+            transition: all 0.3s ease;
+        }
+
+        .favorite-star:hover {
+            transform: scale(1.2);
+            background: rgba(255, 215, 0, 1);
+        }
+
+        .favorite-star.active {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            font-size: 16px;
+        }
+
+        .select-all-btn {
+            background: rgba(255,255,255,0.3);
+            border: 2px solid rgba(255,255,255,0.5);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .select-all-btn:hover {
+            background: rgba(255,255,255,0.4);
+            transform: translateY(-2px);
+        }
+
+        .coin-reward-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #000;
+            padding: 20px 40px;
+            border-radius: 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+            z-index: 2000;
+            animation: popupFade 2s ease-in-out;
+            pointer-events: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        @keyframes popupFade {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+
+        .storage-item .mini-grid {
+            display: grid;
+            grid-template-columns: repeat(40, 2.5px);
+            gap: 0;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .storage-item .mini-cell {
+            width: 2.5px;
+            height: 2.5px;
+        }
+
+        .storage-item-info {
+            font-size: 0.8em;
+            text-align: center;
+        }
+
+        .tier-badge {
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 90%;
+            max-height: 90%;
+            overflow: auto;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 2em;
+            cursor: pointer;
+            color: white;
+            background: rgba(0,0,0,0.3);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .close-modal:hover {
+            background: rgba(0,0,0,0.5);
+            transform: rotate(90deg);
+        }
+
+        .inspect-grid {
+            display: grid;
+            grid-template-columns: repeat(40, 15px);
+            gap: 0;
+            margin: 20px auto;
+            border: 3px solid rgba(255,255,255,0.5);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .inspect-cell {
+            width: 15px;
+            height: 15px;
+        }
+
+        .color-distribution {
+            background: rgba(255,255,255,0.15);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .color-bar {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .color-swatch {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            margin-right: 10px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .color-percentage {
+            flex: 1;
+            background: rgba(0,0,0,0.2);
+            height: 30px;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .color-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .color-label {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: bold;
+            white-space: nowrap;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .roll-animation {
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .tier-uncommon { background: #4CAF50; }
+        .tier-common { background: #808080; }
+        .tier-gold { background: #FFD700; color: #000; }
+        .tier-elite { background: #9C27B0; }
+        .tier-mythic { background: #FF4081; }
+        .tier-galaxy { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .tier-perfect { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Color Grid Gacha 🎨</h1>
+        
+        <div class="game-stats">
+            <div class="stat-item">
+                <div class="stat-label">Total Rolls</div>
+                <div class="stat-value" id="total-rolls">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Color Coins</div>
+                <div class="stat-value" id="color-coins">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Best Tier</div>
+                <div class="stat-value" id="best-tier">-</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="roll-section">
+                <h2>Roll for Colors!</h2>
+                <button class="roll-btn" id="roll-btn">🎲 ROLL</button>
+                <button class="boost-btn" id="boost-btn" disabled>⚡ LUCK BOOST (100 coins)</button>
+                <div id="boost-status"></div>
+                <div class="grid-preview" id="current-preview">
+                    <div class="grid" id="preview-grid"></div>
+                </div>
+                <div id="current-tier" style="font-size: 1.5em; margin: 20px 0; font-weight: bold;"></div>
+            </div>
+
+            <div class="tier-info">
+                <h3 style="margin-bottom: 15px;">Reward Tiers</h3>
+                <div class="tier-item">
+                    <div>
+                        <div class="tier-name">Perfect</div>
+                        <div class="tier-range">100% same color</div>
+                    </div>
+                    <div class="tier-badge tier-perfect">★★★</div>
+                </div>
+                <div class="tier-item">
+                    <div>
+                        <div class="tier-name">Galaxy</div>
+                        <div class="tier-range">90-99%</div>
+                    </div>
+                    <div class="tier-badge tier-galaxy">★★</div>
+                </div>
+                <div class="tier-item">
+                    <div>
+                        <div class="tier-name">Mythic</div>
+                        <div class="tier-range">70-89%</div>
+                    </div>
+                    <div class="tier-badge tier-mythic">★</div>
+                </div>
+                <div class="tier-item">
+                    <div>
+                        <div class="tier-name">Elite</div>
+                        <div class="tier-range">50-69%</div>
+                    </div>
+                    <div class="tier-badge tier-elite">◆</div>
+                </div>
+                <div class="tier-item">
+                    <div>
+                        <div class="tier-name">Gold</div>
+                        <div class="tier-range">30-49%</div>
+                    </div>
+                    <div class="tier-badge tier-gold">●</div>
+                </div>
+                <div class="tier-item">
+                    <div>
+                        <div class="tier-name">Uncommon</div>
+                        <div class="tier-range">20-29%</div>
+                    </div>
+                    <div class="tier-badge tier-uncommon">○</div>
+                </div>
+                <div class="tier-item">
+                    <div>
+                        <div class="tier-name">Common</div>
+                        <div class="tier-range">0-19%</div>
+                    </div>
+                    <div class="tier-badge tier-common">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="storage-section">
+            <div class="storage-header">
+                <h2>Your Collection</h2>
+                <div>
+                    <span id="storage-count">0 items</span>
+                    <button class="delete-mode-btn" id="delete-mode-btn">🗑️ Delete Mode</button>
+                </div>
+            </div>
+            <div class="filter-section">
+                <span style="opacity: 0.8; font-size: 0.9em;">Filter:</span>
+                <button class="filter-btn active" data-tier="all">All</button>
+                <button class="filter-btn" data-tier="Perfect">Perfect</button>
+                <button class="filter-btn" data-tier="Galaxy">Galaxy</button>
+                <button class="filter-btn" data-tier="Mythic">Mythic</button>
+                <button class="filter-btn" data-tier="Elite">Elite</button>
+                <button class="filter-btn" data-tier="Gold">Gold</button>
+                <button class="filter-btn" data-tier="Uncommon">Uncommon</button>
+                <button class="filter-btn" data-tier="Common">Common</button>
+                <button class="select-all-btn" id="select-all-btn" style="display: none;">Select All</button>
+                <button class="bulk-delete-btn" id="bulk-delete-btn" style="display: none;">Delete Selected</button>
+            </div>
+            <div class="storage-grid" id="storage-grid"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="inspect-modal">
+        <div class="modal-content">
+            <span class="close-modal" id="close-modal">×</span>
+            <h2 id="inspect-title">Grid Details</h2>
+            <div class="inspect-grid" id="inspect-grid"></div>
+            <div class="color-distribution" id="color-distribution"></div>
+        </div>
+    </div>
+
+    <script>
+        const COLORS = {
+            pink: '#FFC0CB',
+            red: '#FF0000',
+            purple: '#800080',
+            blue: '#0000FF',
+            green: '#00FF00',
+            yellow: '#FFFF00',
+            orange: '#FFA500',
+            black: '#000000',
+            grey: '#808080',
+            white: '#FFFFFF'
+        };
+
+        const GRID_WIDTH = 40;
+        const GRID_HEIGHT = 25;
+        const TOTAL_CELLS = GRID_WIDTH * GRID_HEIGHT;
+
+        let storage = [];
+        let totalRolls = 0;
+        let colorCoins = 0;
+        let bestTier = null;
+        let luckBoostActive = false;
+        let luckyNumber = Math.floor(Math.random() * 30) + 1;
+        let nextRollIsLucky = false;
+        let currentFilter = 'all';
+        let deleteMode = false;
+        let selectedItems = new Set();
+        let currentBoostPercentage = 0;
+        let favorites = new Set();
+        let nextRollHasRareBoost = false;
+
+        const TIER_COIN_REWARDS = {
+            'Common': 1,
+            'Uncommon': 2,
+            'Gold': 5,
+            'Elite': 10
+        };
+
+        const UNDELETEABLE_TIERS = ['Mythic', 'Galaxy', 'Perfect'];
+        const RARE_BOOST_CHANCE = 0.0109; // 1.09% chance
+
+        // Generate weighted random boost percentage
+        // Higher values are exponentially rarer
+        function generateBoostPercentage(min, max) {
+            // Use exponential distribution for rarity
+            // Higher exponent = rarer high values
+            const exponent = 3; // Adjust this to make high values rarer (higher = more rare)
+            
+            // Generate a random number between 0 and 1, then apply exponential curve
+            const random = Math.random();
+            const curved = Math.pow(random, exponent);
+            
+            // Map the curved value to our range
+            const percentage = min + (curved * (max - min));
+            
+            return percentage / 100; // Return as decimal (e.g., 0.40 for 40%)
+        }
+
+        function generateGrid() {
+            const colorKeys = Object.keys(COLORS);
+            const grid = [];
+            let wasLucky = false;
+            let boostPercent = 0;
+            let wasRareBoost = false;
+            
+            // First square is always random
+            const firstColor = colorKeys[Math.floor(Math.random() * colorKeys.length)];
+            grid.push(firstColor);
+            
+            // Check for rare boost first (highest priority)
+            if (nextRollHasRareBoost) {
+                wasRareBoost = true;
+                boostPercent = generateBoostPercentage(70, 100);
+                for (let i = 1; i < TOTAL_CELLS; i++) {
+                    const matchChance = Math.random();
+                    if (matchChance < boostPercent) {
+                        grid.push(firstColor);
+                    } else {
+                        const randomColor = colorKeys[Math.floor(Math.random() * colorKeys.length)];
+                        grid.push(randomColor);
+                    }
+                }
+                console.log(`✨ RARE BOOST ACTIVATED! ✨ Boost strength: ${(boostPercent * 100).toFixed(1)}%`);
+                nextRollHasRareBoost = false;
+            }
+            // If luck boost is active, increase chance of matching first color (60-100%)
+            else if (luckBoostActive) {
+                boostPercent = generateBoostPercentage(60, 100);
+                for (let i = 1; i < TOTAL_CELLS; i++) {
+                    const matchChance = Math.random();
+                    if (matchChance < boostPercent) {
+                        grid.push(firstColor);
+                    } else {
+                        const randomColor = colorKeys[Math.floor(Math.random() * colorKeys.length)];
+                        grid.push(randomColor);
+                    }
+                }
+                console.log(`⚡ Luck Boost used! Boost strength: ${(boostPercent * 100).toFixed(1)}%`);
+                luckBoostActive = false; // Consume the boost
+                updateBoostUI();
+            } 
+            // If this is a hidden lucky roll, increase chance slightly (20-59%)
+            else if (nextRollIsLucky) {
+                wasLucky = true;
+                boostPercent = generateBoostPercentage(20, 59);
+                for (let i = 1; i < TOTAL_CELLS; i++) {
+                    const matchChance = Math.random();
+                    if (matchChance < boostPercent) {
+                        grid.push(firstColor);
+                    } else {
+                        const randomColor = colorKeys[Math.floor(Math.random() * colorKeys.length)];
+                        grid.push(randomColor);
+                    }
+                }
+                nextRollIsLucky = false; // Reset the lucky flag
+                
+                // Set new lucky number for next time
+                const oldLucky = luckyNumber;
+                luckyNumber = totalRolls + Math.floor(Math.random() * 30) + 1;
+                console.log(`🍀 Hidden lucky roll! Boost strength: ${(boostPercent * 100).toFixed(1)}% | Next lucky roll: #${luckyNumber}`);
+            } 
+            // Normal generation - all random (10% chance per color)
+            else {
+                for (let i = 1; i < TOTAL_CELLS; i++) {
+                    const randomColor = colorKeys[Math.floor(Math.random() * colorKeys.length)];
+                    grid.push(randomColor);
+                }
+            }
+            
+            // Return grid with flags for debugging
+            grid.wasLucky = wasLucky;
+            grid.boostPercent = boostPercent;
+            grid.wasRareBoost = wasRareBoost;
+            return grid;
+        }
+
+        function calculateTier(grid) {
+            const colorCounts = {};
+            
+            grid.forEach(color => {
+                colorCounts[color] = (colorCounts[color] || 0) + 1;
+            });
+            
+            const maxCount = Math.max(...Object.values(colorCounts));
+            const percentage = maxCount / TOTAL_CELLS;
+            const dominantColor = Object.keys(colorCounts).find(color => colorCounts[color] === maxCount);
+            
+            let tier, tierClass;
+            
+            if (percentage === 1.0) {
+                tier = 'Perfect';
+                tierClass = 'tier-perfect';
+            } else if (percentage >= 0.9) {
+                tier = 'Galaxy';
+                tierClass = 'tier-galaxy';
+            } else if (percentage >= 0.7) {
+                tier = 'Mythic';
+                tierClass = 'tier-mythic';
+            } else if (percentage >= 0.5) {
+                tier = 'Elite';
+                tierClass = 'tier-elite';
+            } else if (percentage >= 0.3) {
+                tier = 'Gold';
+                tierClass = 'tier-gold';
+            } else if (percentage >= 0.2) {
+                tier = 'Uncommon';
+                tierClass = 'tier-uncommon';
+            } else {
+                tier = 'Common';
+                tierClass = 'tier-common';
+            }
+            
+            return {
+                tier,
+                tierClass,
+                percentage,
+                dominantColor,
+                colorCounts
+            };
+        }
+
+        function renderGrid(grid, containerElement, cellClass = 'grid-cell') {
+            containerElement.innerHTML = '';
+            grid.forEach(color => {
+                const cell = document.createElement('div');
+                cell.className = cellClass;
+                cell.style.backgroundColor = COLORS[color];
+                containerElement.appendChild(cell);
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('total-rolls').textContent = totalRolls;
+            document.getElementById('color-coins').textContent = colorCoins;
+            document.getElementById('best-tier').textContent = bestTier || '-';
+            updateBoostUI();
+        }
+
+        function updateBoostUI() {
+            const boostBtn = document.getElementById('boost-btn');
+            const boostStatus = document.getElementById('boost-status');
+            const rollSection = document.querySelector('.roll-section');
+            
+            if (luckBoostActive) {
+                boostStatus.innerHTML = '<div class="boost-indicator">✨ LUCK BOOST ACTIVE ✨</div>';
+                rollSection.classList.add('boost-active');
+                boostBtn.disabled = true;
+            } else {
+                boostStatus.innerHTML = '';
+                rollSection.classList.remove('boost-active');
+                
+                if (colorCoins >= 100) {
+                    boostBtn.disabled = false;
+                } else {
+                    boostBtn.disabled = true;
+                }
+            }
+        }
+
+        function updateStorageDisplay() {
+            const storageGrid = document.getElementById('storage-grid');
+            
+            // Filter storage based on current filter
+            let filteredStorage = storage;
+            if (currentFilter !== 'all') {
+                filteredStorage = storage.filter(item => item.tier === currentFilter);
+            }
+            
+            document.getElementById('storage-count').textContent = `${filteredStorage.length} items`;
+            
+            storageGrid.innerHTML = '';
+            
+            filteredStorage.forEach((item, index) => {
+                const canDelete = !UNDELETEABLE_TIERS.includes(item.tier) && !favorites.has(item.rollNumber);
+                
+                const storageItem = document.createElement('div');
+                storageItem.className = 'storage-item';
+                storageItem.dataset.rollNumber = item.rollNumber;
+                
+                if (!canDelete) {
+                    storageItem.classList.add('cannot-delete');
+                }
+                
+                if (deleteMode) {
+                    if (canDelete) {
+                        storageItem.classList.add('delete-mode');
+                        if (selectedItems.has(item.rollNumber)) {
+                            storageItem.classList.add('selected');
+                        }
+                    }
+                }
+                
+                // Favorite star
+                const favoriteStar = document.createElement('div');
+                favoriteStar.className = 'favorite-star';
+                if (favorites.has(item.rollNumber)) {
+                    favoriteStar.classList.add('active');
+                    favoriteStar.textContent = '★';
+                } else {
+                    favoriteStar.textContent = '☆';
+                }
+                
+                favoriteStar.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleFavorite(item.rollNumber);
+                });
+                
+                const deleteIcon = document.createElement('div');
+                deleteIcon.className = 'delete-icon';
+                deleteIcon.textContent = '×';
+                
+                const miniGrid = document.createElement('div');
+                miniGrid.className = 'mini-grid';
+                
+                item.grid.forEach(color => {
+                    const miniCell = document.createElement('div');
+                    miniCell.className = 'mini-cell';
+                    miniCell.style.backgroundColor = COLORS[color];
+                    miniGrid.appendChild(miniCell);
+                });
+                
+                const info = document.createElement('div');
+                info.className = 'storage-item-info';
+                info.innerHTML = `
+                    Roll #${item.rollNumber}<br>
+                    <span class="tier-badge ${item.tierClass}">${item.tier}</span><br>
+                    ${(item.percentage * 100).toFixed(1)}%
+                `;
+                
+                storageItem.appendChild(favoriteStar);
+                storageItem.appendChild(deleteIcon);
+                storageItem.appendChild(miniGrid);
+                storageItem.appendChild(info);
+                
+                storageItem.addEventListener('click', (e) => {
+                    if (deleteMode && canDelete) {
+                        // Toggle selection
+                        if (selectedItems.has(item.rollNumber)) {
+                            selectedItems.delete(item.rollNumber);
+                            storageItem.classList.remove('selected');
+                        } else {
+                            selectedItems.add(item.rollNumber);
+                            storageItem.classList.add('selected');
+                        }
+                        updateDeleteButtons();
+                    } else if (!deleteMode) {
+                        // Normal inspect mode
+                        inspectGrid(item);
+                    }
+                });
+                
+                storageGrid.appendChild(storageItem);
+            });
+            
+            updateDeleteButtons();
+        }
+
+        function toggleFavorite(rollNumber) {
+            if (favorites.has(rollNumber)) {
+                favorites.delete(rollNumber);
+            } else {
+                favorites.add(rollNumber);
+            }
+            updateStorageDisplay();
+        }
+
+        function updateDeleteButtons() {
+            const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+            const selectAllBtn = document.getElementById('select-all-btn');
+            
+            if (deleteMode) {
+                // Show select all button if there are deleteable items in current filter
+                let filteredStorage = storage;
+                if (currentFilter !== 'all') {
+                    filteredStorage = storage.filter(item => item.tier === currentFilter);
+                }
+                const deleteableItems = filteredStorage.filter(item => 
+                    !UNDELETEABLE_TIERS.includes(item.tier) && !favorites.has(item.rollNumber)
+                );
+                
+                if (deleteableItems.length > 0) {
+                    selectAllBtn.style.display = 'inline-block';
+                } else {
+                    selectAllBtn.style.display = 'none';
+                }
+                
+                if (selectedItems.size > 0) {
+                    bulkDeleteBtn.style.display = 'inline-block';
+                    bulkDeleteBtn.textContent = `Delete Selected (${selectedItems.size})`;
+                } else {
+                    bulkDeleteBtn.style.display = 'none';
+                }
+            } else {
+                selectAllBtn.style.display = 'none';
+                bulkDeleteBtn.style.display = 'none';
+            }
+        }
+
+        function showCoinReward(amount) {
+            const popup = document.createElement('div');
+            popup.className = 'coin-reward-popup';
+            popup.textContent = `+${amount} Color Coins! 🪙`;
+            document.body.appendChild(popup);
+            
+            setTimeout(() => {
+                popup.remove();
+            }, 2000);
+        }
+
+        function inspectGrid(item) {
+            const modal = document.getElementById('inspect-modal');
+            const inspectGrid = document.getElementById('inspect-grid');
+            const inspectTitle = document.getElementById('inspect-title');
+            const colorDistribution = document.getElementById('color-distribution');
+            
+            inspectTitle.textContent = `Roll #${item.rollNumber} - ${item.tier} Tier`;
+            
+            renderGrid(item.grid, inspectGrid, 'inspect-cell');
+            
+            colorDistribution.innerHTML = '<h3>Color Distribution</h3>';
+            
+            const sortedColors = Object.entries(item.colorCounts)
+                .sort((a, b) => b[1] - a[1]);
+            
+            sortedColors.forEach(([color, count]) => {
+                const percentage = (count / TOTAL_CELLS) * 100;
+                
+                const colorBar = document.createElement('div');
+                colorBar.className = 'color-bar';
+                colorBar.innerHTML = `
+                    <div class="color-swatch" style="background-color: ${COLORS[color]}"></div>
+                    <div class="color-percentage">
+                        <div class="color-fill" style="width: ${percentage}%; background-color: ${COLORS[color]}; opacity: 0.7;"></div>
+                        <div class="color-label">${color}: ${count} (${percentage.toFixed(1)}%)</div>
+                    </div>
+                `;
+                
+                colorDistribution.appendChild(colorBar);
+            });
+            
+            modal.classList.add('active');
+        }
+
+        document.getElementById('close-modal').addEventListener('click', () => {
+            document.getElementById('inspect-modal').classList.remove('active');
+        });
+
+        document.getElementById('inspect-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'inspect-modal') {
+                document.getElementById('inspect-modal').classList.remove('active');
+            }
+        });
+
+        document.getElementById('roll-btn').addEventListener('click', () => {
+            const previewElement = document.getElementById('current-preview');
+            previewElement.classList.add('roll-animation');
+            
+            setTimeout(() => {
+                previewElement.classList.remove('roll-animation');
+            }, 500);
+            
+            // Increment roll count first
+            totalRolls++;
+            
+            // Check for rare boost (0.009% chance)
+            if (Math.random() < RARE_BOOST_CHANCE) {
+                nextRollHasRareBoost = true;
+            }
+            
+            // Check if this roll number matches the lucky number
+            if (totalRolls === luckyNumber) {
+                nextRollIsLucky = true;
+            }
+            
+            const grid = generateGrid();
+            const tierInfo = calculateTier(grid);
+            
+            colorCoins++;
+            
+            const tierHierarchy = ['Common', 'Uncommon', 'Gold', 'Elite', 'Mythic', 'Galaxy', 'Perfect'];
+            if (!bestTier || tierHierarchy.indexOf(tierInfo.tier) > tierHierarchy.indexOf(bestTier)) {
+                bestTier = tierInfo.tier;
+            }
+            
+            storage.unshift({
+                grid,
+                rollNumber: totalRolls,
+                ...tierInfo,
+                timestamp: new Date()
+            });
+            
+            renderGrid(grid, document.getElementById('preview-grid'));
+            
+            document.getElementById('current-tier').innerHTML = `
+                <span class="tier-badge ${tierInfo.tierClass}">${tierInfo.tier}</span><br>
+                ${(tierInfo.percentage * 100).toFixed(1)}% ${tierInfo.dominantColor}
+            `;
+            
+            updateStats();
+            updateStorageDisplay();
+            
+            // Debug: Log lucky number info (remove this later if you don't want to see it)
+            console.log(`Roll #${totalRolls} | Next lucky roll: #${luckyNumber} | Was lucky: ${tierInfo.wasLucky || false}`);
+        });
+
+        document.getElementById('boost-btn').addEventListener('click', () => {
+            if (colorCoins >= 100) {
+                colorCoins -= 100;
+                luckBoostActive = true;
+                updateStats();
+            }
+        });
+
+        // Filter button event listeners
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.tier;
+                updateStorageDisplay();
+            });
+        });
+
+        // Delete mode toggle
+        document.getElementById('delete-mode-btn').addEventListener('click', () => {
+            deleteMode = !deleteMode;
+            const deleteModeBtn = document.getElementById('delete-mode-btn');
+            
+            if (deleteMode) {
+                deleteModeBtn.classList.add('active');
+                deleteModeBtn.textContent = '✓ Delete Mode';
+            } else {
+                deleteModeBtn.classList.remove('active');
+                deleteModeBtn.textContent = '🗑️ Delete Mode';
+                selectedItems.clear();
+            }
+            
+            updateStorageDisplay();
+        });
+
+        // Bulk delete button
+        document.getElementById('bulk-delete-btn').addEventListener('click', () => {
+            if (selectedItems.size === 0) return;
+            
+            // Calculate total coin rewards
+            let totalCoins = 0;
+            const itemsToDelete = [];
+            
+            selectedItems.forEach(rollNumber => {
+                const item = storage.find(i => i.rollNumber === rollNumber);
+                if (item && TIER_COIN_REWARDS[item.tier]) {
+                    totalCoins += TIER_COIN_REWARDS[item.tier];
+                    itemsToDelete.push(item);
+                }
+            });
+            
+            if (confirm(`Delete ${selectedItems.size} item(s) for ${totalCoins} Color Coins?`)) {
+                storage = storage.filter(item => !selectedItems.has(item.rollNumber));
+                colorCoins += totalCoins;
+                selectedItems.clear();
+                
+                showCoinReward(totalCoins);
+                updateStats();
+                updateStorageDisplay();
+            }
+        });
+
+        // Select all button
+        document.getElementById('select-all-btn').addEventListener('click', () => {
+            let filteredStorage = storage;
+            if (currentFilter !== 'all') {
+                filteredStorage = storage.filter(item => item.tier === currentFilter);
+            }
+            
+            // Select all deleteable items in current filter
+            filteredStorage.forEach(item => {
+                if (!UNDELETEABLE_TIERS.includes(item.tier) && !favorites.has(item.rollNumber)) {
+                    selectedItems.add(item.rollNumber);
+                }
+            });
+            
+            updateStorageDisplay();
+        });
+
+        // Initialize with a sample roll
+        updateStats();
+    </script>
+</body>
+</html>
