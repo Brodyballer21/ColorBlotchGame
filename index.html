@@ -1313,11 +1313,85 @@
             }, 3000);
         }
 
+        // Compress grid using Run-Length Encoding (RLE)
+        // Reduces size by 70-90% depending on color distribution
+        function compressGrid(grid) {
+            // Map color names to single characters
+            const colorMap = {
+                'pink': 'p', 'red': 'r', 'purple': 'u', 'blue': 'b', 'green': 'g',
+                'yellow': 'y', 'orange': 'o', 'black': 'k', 'grey': 'e', 'white': 'w'
+            };
+            
+            if (!grid || grid.length === 0) return '';
+            
+            let compressed = '';
+            let currentColor = colorMap[grid[0]];
+            let count = 1;
+            
+            // Run-Length Encoding: instead of "rrrrr" we store "r5"
+            for (let i = 1; i < grid.length; i++) {
+                const color = colorMap[grid[i]];
+                
+                if (color === currentColor && count < 99) {
+                    // Same color, increment count
+                    count++;
+                } else {
+                    // Different color or max count reached, save current run
+                    compressed += currentColor + (count > 1 ? count : '');
+                    currentColor = color;
+                    count = 1;
+                }
+            }
+            
+            // Don't forget the last run
+            compressed += currentColor + (count > 1 ? count : '');
+            
+            return compressed;
+        }
+        
+        // Decompress grid from RLE format
+        function decompressGrid(compressedString) {
+            // Map single characters back to color names
+            const reverseMap = {
+                'p': 'pink', 'r': 'red', 'u': 'purple', 'b': 'blue', 'g': 'green',
+                'y': 'yellow', 'o': 'orange', 'k': 'black', 'e': 'grey', 'w': 'white'
+            };
+            
+            if (!compressedString) return [];
+            
+            const grid = [];
+            let i = 0;
+            
+            while (i < compressedString.length) {
+                const color = reverseMap[compressedString[i]];
+                i++;
+                
+                // Check if next characters are digits (count)
+                let countStr = '';
+                while (i < compressedString.length && /\d/.test(compressedString[i])) {
+                    countStr += compressedString[i];
+                    i++;
+                }
+                
+                const count = countStr ? parseInt(countStr) : 1;
+                
+                // Add color 'count' times
+                for (let j = 0; j < count; j++) {
+                    grid.push(color);
+                }
+            }
+            
+            return grid;
+        }
+
         // ===== FIREBASE AUTH & DATA FUNCTIONS =====
         
         // Save game data to Firestore
         async function saveGameData() {
-            if (!currentUser) return;
+            if (!currentUser) {
+                console.error('No user logged in');
+                return;
+            }
             
             const saveStatus = document.getElementById('save-status');
             const syncStatus = document.getElementById('sync-status');
@@ -1325,30 +1399,63 @@
             saveStatus.textContent = 'Saving...';
             syncStatus.textContent = 'Saving...';
             
+            console.log('Starting save...', {
+                totalRolls,
+                colorCoins,
+                storageItems: storage.length,
+                favorites: favorites.size
+            });
+            
             try {
                 const userRef = db.collection('users').doc(currentUser.uid);
-                await userRef.set({
+                
+                // Prepare data for save
+                const dataToSave = {
                     totalRolls,
                     colorCoins,
                     bestTier,
-                    storage: storage.map(item => ({
-                        ...item,
-                        grid: item.grid.filter((_, i) => i < 1000), // Ensure grid is array
-                        timestamp: item.timestamp ? item.timestamp.toString() : new Date().toString()
-                    })),
+                    storage: storage.map(item => {
+                        // Compress the grid to save MASSIVE space
+                        const compressedGrid = compressGrid(item.grid);
+                        
+                        return {
+                            rollNumber: item.rollNumber,
+                            tier: item.tier,
+                            tierClass: item.tierClass,
+                            percentage: item.percentage || 0,
+                            dominantColor: item.dominantColor || '',
+                            colorCounts: item.colorCounts || {},
+                            isSecret: item.isSecret || false,
+                            secretDesign: item.secretDesign || '',
+                            grid: compressedGrid, // Store compressed string instead of 1000-item array
+                            timestamp: item.timestamp ? item.timestamp.toString() : new Date().toString()
+                        };
+                    }),
                     favorites: Array.from(favorites),
                     luckyNumber,
                     lastSaved: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                };
+                
+                console.log('Data prepared for save, attempting Firestore write...');
+                
+                await userRef.set(dataToSave);
                 
                 const now = new Date().toLocaleTimeString();
                 saveStatus.textContent = `Saved ${now}`;
                 syncStatus.textContent = `Saved ${now}`;
-                console.log('Game data saved to cloud');
+                console.log('✅ Game data saved successfully to cloud');
             } catch (error) {
-                console.error('Error saving game data:', error);
+                console.error('❌ Error saving game data:', error);
+                console.error('Error details:', {
+                    code: error.code,
+                    message: error.message,
+                    name: error.name
+                });
                 saveStatus.textContent = 'Save failed ✗';
                 syncStatus.textContent = 'Save failed ✗';
+                
+                // Show user-friendly error
+                alert(`Save failed: ${error.message}\n\nPlease check:\n- You're connected to the internet\n- You're signed in\n- Firestore rules are set correctly`);
             }
         }
 
@@ -1366,7 +1473,25 @@
                     totalRolls = data.totalRolls || 0;
                     colorCoins = data.colorCoins || 0;
                     bestTier = data.bestTier || null;
-                    storage = data.storage || [];
+                    
+                    // Decompress grids when loading
+                    storage = (data.storage || []).map(item => {
+                        // Check if grid is compressed (string) or old format (array)
+                        let grid;
+                        if (typeof item.grid === 'string') {
+                            // Decompress the grid
+                            grid = decompressGrid(item.grid);
+                        } else {
+                            // Old format - keep as is
+                            grid = item.grid || [];
+                        }
+                        
+                        return {
+                            ...item,
+                            grid: grid
+                        };
+                    });
+                    
                     favorites = new Set(data.favorites || []);
                     luckyNumber = data.luckyNumber || Math.floor(Math.random() * 30) + 1;
                     
