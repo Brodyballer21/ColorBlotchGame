@@ -737,6 +737,29 @@
             opacity: 0.9;
         }
 
+        .clear-data-btn {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .clear-data-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.5);
+        }
+
+        .clear-data-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         /* Secret Rare Celebration */
         .secret-rare-celebration {
             position: fixed;
@@ -834,6 +857,7 @@
     <div class="save-button-container" id="save-container">
         <button class="big-save-btn" id="big-save-btn">💾 SAVE PROGRESS</button>
         <div class="save-status" id="save-status">Not saved</div>
+        <button class="clear-data-btn" id="clear-data-btn" style="margin-top: 10px; background: #f44336; font-size: 0.8em; padding: 8px 16px;">🗑️ Clear Cloud Data</button>
     </div>
 
     <!-- Secret Rare Celebration Overlay -->
@@ -1054,6 +1078,10 @@
         const UNDELETEABLE_TIERS = ['Mythic', 'Galaxy', 'Perfect', 'Secret'];
         const RARE_BOOST_CHANCE = 0.0109; // 1.09% chance
         const SECRET_RARE_CHANCE = 0.00025; // 0.025% chance (1 in 4,000)
+        
+        // Storage optimization: Set to true to only save Uncommon+ grids (saves 80% space!)
+        const ONLY_SAVE_GOOD_GRIDS = true; // Change to false to save all grids
+        const MIN_TIER_TO_SAVE = ['Common', 'Uncommon', 'Gold', 'Elite', 'Mythic', 'Galaxy', 'Perfect', 'Secret'];
 
         // SECRET RARE PIXEL ART DESIGNS
         const SECRET_DESIGNS = {
@@ -1585,6 +1613,56 @@
             saveBtn.textContent = '💾 SAVE PROGRESS';
         });
 
+        // Clear cloud data button
+        document.getElementById('clear-data-btn').addEventListener('click', async () => {
+            if (!currentUser) {
+                alert('You must be signed in to clear cloud data');
+                return;
+            }
+
+            const confirmed = confirm(
+                '⚠️ WARNING ⚠️\n\n' +
+                'This will DELETE ALL your cloud-saved data:\n' +
+                '- All rolls\n' +
+                '- Color coins\n' +
+                '- Inventory\n' +
+                '- Favorites\n\n' +
+                'Your LOCAL data (current session) will stay until you refresh.\n\n' +
+                'Are you SURE you want to delete everything from the cloud?'
+            );
+
+            if (!confirmed) return;
+
+            const doubleConfirm = confirm('Are you ABSOLUTELY SURE? This CANNOT be undone!');
+            if (!doubleConfirm) return;
+
+            try {
+                const clearBtn = document.getElementById('clear-data-btn');
+                clearBtn.disabled = true;
+                clearBtn.textContent = '🗑️ Deleting...';
+
+                // Delete the user's document from Firestore
+                await db.collection('users').doc(currentUser.uid).delete();
+
+                clearBtn.disabled = false;
+                clearBtn.textContent = '🗑️ Clear Cloud Data';
+                
+                document.getElementById('save-status').textContent = 'Cloud data deleted';
+                document.getElementById('sync-status').textContent = 'Cloud data deleted';
+
+                alert('✅ Cloud data deleted successfully!\n\nRefresh the page to start fresh, or keep playing with your current session data.');
+                
+                console.log('Cloud data deleted successfully');
+            } catch (error) {
+                console.error('Error deleting cloud data:', error);
+                alert('Failed to delete cloud data: ' + error.message);
+                
+                const clearBtn = document.getElementById('clear-data-btn');
+                clearBtn.disabled = false;
+                clearBtn.textContent = '🗑️ Clear Cloud Data';
+            }
+        });
+
         // ===== GAME FUNCTIONS =====
         
         function generateGrid() {
@@ -2011,12 +2089,20 @@
                 bestTier = tierInfo.tier;
             }
             
-            storage.unshift({
-                grid,
-                rollNumber: totalRolls,
-                ...tierInfo,
-                timestamp: new Date()
-            });
+            // Only store grid if it meets minimum tier requirement (saves MASSIVE space!)
+            const tierIndex = tierHierarchy.indexOf(tierInfo.tier);
+            const shouldStore = !ONLY_SAVE_GOOD_GRIDS || tierIndex >= 1; // 1 = Uncommon
+            
+            if (shouldStore) {
+                storage.unshift({
+                    grid,
+                    rollNumber: totalRolls,
+                    ...tierInfo,
+                    timestamp: new Date()
+                });
+            } else {
+                console.log(`Skipped storing Common tier grid (Roll #${totalRolls}) to save space`);
+            }
             
             renderGrid(grid, document.getElementById('preview-grid'));
             
