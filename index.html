@@ -688,78 +688,6 @@
             opacity: 0.9;
         }
 
-        /* Manual Save Button - Top Left */
-        .save-button-container {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 100;
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(10px);
-            padding: 15px 20px;
-            border-radius: 10px;
-            display: none; /* Hidden by default, shown when logged in */
-        }
-
-        .save-button-container.show {
-            display: block;
-        }
-
-        .big-save-btn {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1em;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            display: block;
-            width: 100%;
-        }
-
-        .big-save-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(76, 175, 80, 0.5);
-        }
-
-        .big-save-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .save-status {
-            margin-top: 8px;
-            text-align: center;
-            font-size: 0.85em;
-            opacity: 0.9;
-        }
-
-        .clear-data-btn {
-            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.8em;
-            transition: all 0.3s ease;
-            width: 100%;
-        }
-
-        .clear-data-btn:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.5);
-        }
-
-        .clear-data-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
         /* Secret Rare Celebration */
         .secret-rare-celebration {
             position: fixed;
@@ -853,13 +781,6 @@
     </style>
 </head>
 <body>
-    <!-- Manual Save Button - Top Left -->
-    <div class="save-button-container" id="save-container">
-        <button class="big-save-btn" id="big-save-btn">💾 SAVE PROGRESS</button>
-        <div class="save-status" id="save-status">Not saved</div>
-        <button class="clear-data-btn" id="clear-data-btn" style="margin-top: 10px; background: #f44336; font-size: 0.8em; padding: 8px 16px;">🗑️ Clear Cloud Data</button>
-    </div>
-
     <!-- Secret Rare Celebration Overlay -->
     <div class="secret-rare-celebration" id="celebration-overlay">
         <div class="celebration-flash"></div>
@@ -1069,13 +990,13 @@
         let nextRollHasRareBoost = false;
 
         const TIER_COIN_REWARDS = {
-            'Common': 1,
-            'Uncommon': 2,
-            'Gold': 5,
-            'Elite': 10
+            'Uncommon': 5,
+            'Gold': 10,
+            'Elite': 15,
+            'Mythic': 25
         };
 
-        const UNDELETEABLE_TIERS = ['Mythic', 'Galaxy', 'Perfect', 'Secret'];
+        const UNDELETEABLE_TIERS = ['Galaxy', 'Perfect', 'Secret'];
         const RARE_BOOST_CHANCE = 0.0109; // 1.09% chance
         const SECRET_RARE_CHANCE = 0.00025; // 0.025% chance (1 in 4,000)
         
@@ -1421,10 +1342,8 @@
                 return;
             }
             
-            const saveStatus = document.getElementById('save-status');
             const syncStatus = document.getElementById('sync-status');
             
-            saveStatus.textContent = 'Saving...';
             syncStatus.textContent = 'Saving...';
             
             console.log('Starting save...', {
@@ -1469,7 +1388,6 @@
                 await userRef.set(dataToSave);
                 
                 const now = new Date().toLocaleTimeString();
-                saveStatus.textContent = `Saved ${now}`;
                 syncStatus.textContent = `Saved ${now}`;
                 console.log('✅ Game data saved successfully to cloud');
             } catch (error) {
@@ -1479,7 +1397,6 @@
                     message: error.message,
                     name: error.name
                 });
-                saveStatus.textContent = 'Save failed ✗';
                 syncStatus.textContent = 'Save failed ✗';
                 
                 // Show user-friendly error
@@ -1527,11 +1444,9 @@
                     updateStorageDisplay();
                     
                     console.log('Game data loaded from cloud');
-                    document.getElementById('save-status').textContent = 'Loaded from cloud';
                     document.getElementById('sync-status').textContent = 'Loaded from cloud';
                 } else {
                     console.log('No saved data found, starting fresh');
-                    document.getElementById('save-status').textContent = 'No save data';
                     document.getElementById('sync-status').textContent = 'No save data';
                 }
             } catch (error) {
@@ -1543,7 +1458,6 @@
         auth.onAuthStateChanged(async (user) => {
             const signedInView = document.getElementById('signed-in-view');
             const signedOutView = document.getElementById('signed-out-view');
-            const saveContainer = document.getElementById('save-container');
             
             if (user) {
                 currentUser = user;
@@ -1554,18 +1468,12 @@
                 signedInView.style.display = 'flex';
                 signedOutView.style.display = 'none';
                 
-                // Show save button
-                saveContainer.classList.add('show');
-                
                 // Load saved game data
                 await loadGameData();
             } else {
                 currentUser = null;
                 signedInView.style.display = 'none';
                 signedOutView.style.display = 'block';
-                
-                // Hide save button
-                saveContainer.classList.remove('show');
             }
         });
 
@@ -1589,7 +1497,7 @@
             }
         });
 
-        // Manual save button
+        // Manual save button (in header)
         document.getElementById('manual-save-btn').addEventListener('click', async () => {
             const saveBtn = document.getElementById('manual-save-btn');
             saveBtn.disabled = true;
@@ -1599,68 +1507,6 @@
             
             saveBtn.disabled = false;
             saveBtn.textContent = '💾 Save';
-        });
-
-        // Big save button in top left
-        document.getElementById('big-save-btn').addEventListener('click', async () => {
-            const saveBtn = document.getElementById('big-save-btn');
-            saveBtn.disabled = true;
-            saveBtn.textContent = '💾 SAVING...';
-            
-            await saveGameData();
-            
-            saveBtn.disabled = false;
-            saveBtn.textContent = '💾 SAVE PROGRESS';
-        });
-
-        // Clear cloud data button
-        document.getElementById('clear-data-btn').addEventListener('click', async () => {
-            if (!currentUser) {
-                alert('You must be signed in to clear cloud data');
-                return;
-            }
-
-            const confirmed = confirm(
-                '⚠️ WARNING ⚠️\n\n' +
-                'This will DELETE ALL your cloud-saved data:\n' +
-                '- All rolls\n' +
-                '- Color coins\n' +
-                '- Inventory\n' +
-                '- Favorites\n\n' +
-                'Your LOCAL data (current session) will stay until you refresh.\n\n' +
-                'Are you SURE you want to delete everything from the cloud?'
-            );
-
-            if (!confirmed) return;
-
-            const doubleConfirm = confirm('Are you ABSOLUTELY SURE? This CANNOT be undone!');
-            if (!doubleConfirm) return;
-
-            try {
-                const clearBtn = document.getElementById('clear-data-btn');
-                clearBtn.disabled = true;
-                clearBtn.textContent = '🗑️ Deleting...';
-
-                // Delete the user's document from Firestore
-                await db.collection('users').doc(currentUser.uid).delete();
-
-                clearBtn.disabled = false;
-                clearBtn.textContent = '🗑️ Clear Cloud Data';
-                
-                document.getElementById('save-status').textContent = 'Cloud data deleted';
-                document.getElementById('sync-status').textContent = 'Cloud data deleted';
-
-                alert('✅ Cloud data deleted successfully!\n\nRefresh the page to start fresh, or keep playing with your current session data.');
-                
-                console.log('Cloud data deleted successfully');
-            } catch (error) {
-                console.error('Error deleting cloud data:', error);
-                alert('Failed to delete cloud data: ' + error.message);
-                
-                const clearBtn = document.getElementById('clear-data-btn');
-                clearBtn.disabled = false;
-                clearBtn.textContent = '🗑️ Clear Cloud Data';
-            }
         });
 
         // ===== GAME FUNCTIONS =====
