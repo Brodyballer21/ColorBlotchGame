@@ -688,6 +688,127 @@
             opacity: 0.9;
         }
 
+        /* How to Play Button */
+        .how-to-play-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0 auto 20px auto;
+            display: block;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .how-to-play-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+        }
+
+        /* How to Play Modal */
+        .how-to-play {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .how-to-play-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .how-to-play-content h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .how-to-play-content h3 {
+            color: #FFD700;
+            margin-top: 25px;
+            margin-bottom: 10px;
+            font-size: 1.4em;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .rule-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .rule-section p {
+            color: white;
+            line-height: 1.8;
+            margin: 0;
+            font-size: 1em;
+        }
+
+        .rule-section strong {
+            color: #FFD700;
+        }
+
+        .close-how-to-play {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 30px auto 0 auto;
+            display: block;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+        }
+
+        .close-how-to-play:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(76, 175, 80, 0.6);
+        }
+
+        @media (max-width: 768px) {
+            .how-to-play-content {
+                padding: 25px;
+                max-height: 85vh;
+            }
+            
+            .how-to-play-content h2 {
+                font-size: 2em;
+            }
+            
+            .how-to-play-content h3 {
+                font-size: 1.2em;
+            }
+        }
+
         /* Secret Rare Celebration */
         .secret-rare-celebration {
             position: fixed;
@@ -814,7 +935,72 @@
     </div>
 
     <div class="container">
-        <h1>🎨 Color Grid Gacha 🎨</h1>
+        <h1>🎨 Roll Your Color 🎨</h1>
+        
+        <!-- How to Play Section -->
+        <div class="how-to-play" id="how-to-play-section" style="display: none;">
+            <div class="how-to-play-content">
+                <h2>📖 How to Play</h2>
+                
+                <div class="rule-section">
+                    <h3>🎯 Objective</h3>
+                    <p>Roll 25×40 grids (1,000 squares) and try to get the highest matching color percentage! Chase rare tiers and collect Secret Rare pixel art designs.</p>
+                </div>
+                
+                <div class="rule-section">
+                    <h3>🎲 How to Roll</h3>
+                    <p><strong>1.</strong> Click the <strong>"🎲 ROLL"</strong> button to generate a new grid<br>
+                    <strong>2.</strong> Each roll costs <strong>1 Color Coin</strong> (you gain 1 coin per roll)<br>
+                    <strong>3.</strong> The grid shows your result with a tier badge</p>
+                </div>
+                
+                <div class="rule-section">
+                    <h3>🏆 Tier System</h3>
+                    <p><strong>Common (0-19%):</strong> Basic rolls<br>
+                    <strong>Uncommon (20-29%):</strong> Getting better<br>
+                    <strong>Gold (30-49%):</strong> Nice match!<br>
+                    <strong>Elite (50-69%):</strong> Impressive<br>
+                    <strong>Mythic (70-89%):</strong> Very rare<br>
+                    <strong>Galaxy (90-99%):</strong> Legendary<br>
+                    <strong>Perfect (100%):</strong> Ultimate achievement<br>
+                    <strong>Secret Rare (0.025%):</strong> 1 in 4,000! Pixel art designs</p>
+                </div>
+                
+                <div class="rule-section">
+                    <h3>⚡ Luck Boost System</h3>
+                    <p><strong>Hidden Lucky Roll:</strong> Automatically triggers every 1-30 rolls (20-59% boost)<br>
+                    <strong>Paid Luck Boost:</strong> Costs 100 coins, activate for 60-100% boost (golden glow effect)<br>
+                    <strong>Rare Random Boost:</strong> 1.09% chance per roll, 70-100% boost (hidden)</p>
+                </div>
+                
+                <div class="rule-section">
+                    <h3>📦 Inventory</h3>
+                    <p><strong>•</strong> All Uncommon+ tier grids are saved automatically<br>
+                    <strong>•</strong> Filter by tier to find specific rolls<br>
+                    <strong>•</strong> Click grids to inspect full details<br>
+                    <strong>•</strong> Favorite grids with ⭐ to protect them<br>
+                    <strong>•</strong> Delete unwanted grids for coins (Uncommon: 5, Gold: 10, Elite: 15, Mythic: 25)</p>
+                </div>
+                
+                <div class="rule-section">
+                    <h3>☁️ Cloud Saves</h3>
+                    <p><strong>•</strong> Sign in with Google to save progress<br>
+                    <strong>•</strong> Click the <strong>"💾 Save"</strong> button to backup your data<br>
+                    <strong>•</strong> Play across multiple devices with your account</p>
+                </div>
+                
+                <div class="rule-section">
+                    <h3>👾 Secret Rares</h3>
+                    <p>8 unique pixel art designs with 0.025% drop rate (1 in 4,000):<br>
+                    🤡 Clown • 🔺 Apex • 🌀 Portal • 👑 Crown • ❤️ Heart • ⭐ Star • 💎 Diamond • 👾 Invader<br>
+                    <strong>Cannot be deleted!</strong> Celebration effect on discovery!</p>
+                </div>
+                
+                <button class="close-how-to-play" id="close-how-to-play">Got it!</button>
+            </div>
+        </div>
+        
+        <button class="how-to-play-btn" id="how-to-play-btn">📖 How to Play</button>
         
         <div class="game-stats">
             <div class="stat-item">
@@ -1567,6 +1753,23 @@
             
             saveBtn.disabled = false;
             saveBtn.textContent = '💾 Save';
+        });
+
+        // How to Play button
+        document.getElementById('how-to-play-btn').addEventListener('click', () => {
+            document.getElementById('how-to-play-section').style.display = 'flex';
+        });
+
+        // Close How to Play
+        document.getElementById('close-how-to-play').addEventListener('click', () => {
+            document.getElementById('how-to-play-section').style.display = 'none';
+        });
+
+        // Close How to Play when clicking outside
+        document.getElementById('how-to-play-section').addEventListener('click', (e) => {
+            if (e.target.id === 'how-to-play-section') {
+                document.getElementById('how-to-play-section').style.display = 'none';
+            }
         });
 
         // ===== GAME FUNCTIONS =====
