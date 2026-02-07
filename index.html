@@ -1838,10 +1838,10 @@
                 }
                 nextRollIsLucky = false; // Reset the lucky flag
                 
-                // Set new lucky number for next time
+                // Set new lucky number for next time (1-30 rolls from now)
                 const oldLucky = luckyNumber;
                 luckyNumber = totalRolls + Math.floor(Math.random() * 30) + 1;
-                console.log(`🍀 Hidden lucky roll! Boost strength: ${(boostPercent * 100).toFixed(1)}% | Next lucky roll: #${luckyNumber}`);
+                console.log(`🍀 HIDDEN LUCKY ROLL TRIGGERED! Boost: ${(boostPercent * 100).toFixed(1)}% | Next lucky: #${luckyNumber} (was #${oldLucky})`);
             } 
             // Normal generation - all random (10% chance per color)
             else {
@@ -1849,6 +1849,7 @@
                     const randomColor = colorKeys[Math.floor(Math.random() * colorKeys.length)];
                     grid.push(randomColor);
                 }
+                console.log(`No boost active. Normal random roll. Next lucky: #${luckyNumber}`);
             }
             
             // Return grid with flags for debugging
