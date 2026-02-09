@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Roll Your Color</title>
     
     <!-- Google AdSense -->
@@ -19,6 +19,8 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            /* Disable double-tap zoom on mobile */
+            touch-action: manipulation;
         }
 
         body {
@@ -902,6 +904,278 @@
         @keyframes rainbowBorder {
             0% { filter: hue-rotate(0deg); }
             100% { filter: hue-rotate(360deg); }
+        }
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2em;
+                margin-bottom: 15px;
+            }
+            
+            .how-to-play-btn {
+                font-size: 0.9em;
+                padding: 10px 20px;
+                margin-bottom: 15px;
+            }
+            
+            .game-stats {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+            
+            .stat-item {
+                padding: 12px 8px;
+            }
+            
+            .stat-label {
+                font-size: 0.8em;
+            }
+            
+            .stat-value {
+                font-size: 1.3em;
+            }
+            
+            .main-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .roll-section {
+                width: 100%;
+                padding: 20px;
+            }
+            
+            .roll-section h2 {
+                font-size: 1.3em;
+                margin-bottom: 15px;
+            }
+            
+            /* Make roll button BIGGER on mobile for easier tapping */
+            .roll-btn {
+                font-size: 1.3em;
+                padding: 18px 40px;
+                min-height: 60px;
+            }
+            
+            .boost-btn {
+                font-size: 0.9em;
+                padding: 12px 20px;
+                margin-top: 10px;
+            }
+            
+            /* Make grid smaller on mobile to fit screen */
+            .grid {
+                grid-template-columns: repeat(40, 7px);
+            }
+            
+            .cell {
+                width: 7px;
+                height: 7px;
+            }
+            
+            .grid-preview {
+                margin: 15px 0;
+            }
+            
+            #current-tier {
+                font-size: 1.2em;
+                margin: 15px 0;
+            }
+            
+            .tier-badge {
+                font-size: 0.9em;
+                padding: 8px 16px;
+            }
+            
+            /* Tier info sidebar becomes full width on mobile */
+            .tier-info {
+                width: 100%;
+                padding: 20px;
+            }
+            
+            .tier-info h3 {
+                font-size: 1.2em;
+                margin-bottom: 15px;
+            }
+            
+            .tier-item {
+                padding: 12px;
+                margin-bottom: 10px;
+            }
+            
+            .tier-name {
+                font-size: 0.9em;
+            }
+            
+            .tier-percentage {
+                font-size: 0.8em;
+            }
+            
+            /* Storage/Inventory section */
+            .storage-section {
+                margin-top: 30px;
+                padding: 20px;
+            }
+            
+            .storage-section h2 {
+                font-size: 1.5em;
+                margin-bottom: 15px;
+            }
+            
+            .filter-buttons {
+                gap: 8px;
+                margin-bottom: 15px;
+            }
+            
+            .filter-btn {
+                padding: 8px 12px;
+                font-size: 0.8em;
+            }
+            
+            .action-buttons {
+                gap: 10px;
+                margin-bottom: 15px;
+            }
+            
+            .action-btn {
+                padding: 10px 16px;
+                font-size: 0.85em;
+            }
+            
+            .storage-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+            
+            .storage-item {
+                padding: 12px;
+            }
+            
+            .mini-grid {
+                grid-template-columns: repeat(40, 3px);
+            }
+            
+            .mini-cell {
+                width: 3px;
+                height: 3px;
+            }
+            
+            /* Auth header on mobile */
+            .auth-section {
+                padding: 10px;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            
+            .sign-in-btn {
+                width: 100%;
+                max-width: none;
+            }
+            
+            #signed-in-view {
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+            }
+            
+            .user-info {
+                justify-content: center;
+            }
+            
+            .manual-save-btn,
+            .sign-out-btn {
+                width: 100%;
+                padding: 10px;
+                font-size: 0.9em;
+            }
+            
+            /* How to Play modal on mobile */
+            .how-to-play-content {
+                padding: 25px;
+                max-height: 85vh;
+            }
+            
+            .how-to-play-content h2 {
+                font-size: 1.8em;
+            }
+            
+            .how-to-play-content h3 {
+                font-size: 1.1em;
+            }
+            
+            .rule-section {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+            
+            .rule-section p {
+                font-size: 0.9em;
+                line-height: 1.6;
+            }
+            
+            /* Inspect modal on mobile */
+            .inspect-modal-content {
+                width: 95%;
+                max-width: none;
+                padding: 20px;
+            }
+            
+            #inspect-title {
+                font-size: 1.2em;
+            }
+            
+            .inspect-grid .cell {
+                width: 6px;
+                height: 6px;
+            }
+            
+            .inspect-grid {
+                grid-template-columns: repeat(40, 6px);
+            }
+        }
+        
+        /* Even smaller phones */
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.6em;
+            }
+            
+            .game-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .roll-btn {
+                font-size: 1.2em;
+                padding: 16px 32px;
+            }
+            
+            .grid {
+                grid-template-columns: repeat(40, 6px);
+            }
+            
+            .cell {
+                width: 6px;
+                height: 6px;
+            }
+            
+            .storage-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-buttons {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
     </style>
 </head>
