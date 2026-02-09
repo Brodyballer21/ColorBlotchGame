@@ -1451,6 +1451,10 @@
         let favorites = new Set();
         let nextRollHasRareBoost = false;
 
+        // Anti-auto-clicker rate limiting
+        let lastRollTime = 0;
+        const MIN_ROLL_DELAY = 100; // 100ms = 10 rolls per second max (humans can't exceed this)
+
         const TIER_COIN_REWARDS = {
             'Uncommon': 5,
             'Gold': 10,
@@ -2456,6 +2460,17 @@
         });
 
         document.getElementById('roll-btn').addEventListener('click', () => {
+            // Anti-auto-clicker check
+            const currentTime = Date.now();
+            const timeSinceLastRoll = currentTime - lastRollTime;
+            
+            if (timeSinceLastRoll < MIN_ROLL_DELAY) {
+                // Silently ignore clicks faster than 100ms (10 clicks/second)
+                return;
+            }
+            
+            lastRollTime = currentTime;
+            
             const previewElement = document.getElementById('current-preview');
             previewElement.classList.add('roll-animation');
             
