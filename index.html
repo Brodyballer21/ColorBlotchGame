@@ -590,6 +590,108 @@
         .tier-mythic { background: #FF4081; }
         .tier-galaxy { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .tier-perfect { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        
+        /* SCENIC RARE STYLES */
+        .tier-scenic { background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 50%, #FFD93D 100%); }
+        
+        .scenic-container {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .scenic-name {
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-align: center;
+            color: #FFD700;
+        }
+        
+        .scenic-pieces-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            margin-bottom: 5px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .scenic-piece {
+            aspect-ratio: 1;
+            background: rgba(255,255,255,0.05);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .scenic-piece.locked {
+            opacity: 0.3;
+        }
+        
+        .scenic-piece.unlocked {
+            background: transparent;
+        }
+        
+        .scenic-container.complete {
+            border: 3px solid #FFD700;
+            box-shadow: 0 0 20px rgba(255,215,0,0.5);
+            animation: scenicGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes scenicGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255,215,0,0.5); }
+            50% { box-shadow: 0 0 30px rgba(255,215,0,0.8); }
+        }
+        
+        /* PAINT SPLOTCH CELEBRATION ANIMATION */
+        .paint-splotch {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            animation: splotchFly 1.5s ease-out forwards;
+        }
+        
+        @keyframes splotchFly {
+            0% {
+                transform: translate(0, 0) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0.3) rotate(720deg);
+                opacity: 0;
+            }
+        }
+        
+        .scenic-celebration {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3em;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 0 0 20px rgba(255,215,0,0.8);
+            z-index: 9999;
+            animation: scenicPop 2s ease-out forwards;
+            pointer-events: none;
+            white-space: pre-line;
+            text-align: center;
+        }
+        
+        @keyframes scenicPop {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
 
         /* Auth Section */
         .auth-section {
@@ -1370,6 +1472,7 @@
             <div class="filter-section">
                 <span style="opacity: 0.8; font-size: 0.9em;">Filter:</span>
                 <button class="filter-btn active" data-tier="all">All</button>
+                <button class="filter-btn" data-tier="Scenic">🌈 Scenic Rare</button>
                 <button class="filter-btn" data-tier="Secret">✨ Secret</button>
                 <button class="filter-btn" data-tier="Perfect">Perfect</button>
                 <button class="filter-btn" data-tier="Galaxy">Galaxy</button>
@@ -1377,7 +1480,6 @@
                 <button class="filter-btn" data-tier="Elite">Elite</button>
                 <button class="filter-btn" data-tier="Gold">Gold</button>
                 <button class="filter-btn" data-tier="Uncommon">Uncommon</button>
-                <button class="filter-btn" data-tier="Common">Common</button>
                 <button class="select-all-btn" id="select-all-btn" style="display: none;">Select All</button>
                 <button class="bulk-delete-btn" id="bulk-delete-btn" style="display: none;">Delete Selected</button>
             </div>
@@ -1462,9 +1564,330 @@
             'Mythic': 25
         };
 
-        const UNDELETEABLE_TIERS = ['Galaxy', 'Perfect', 'Secret'];
+        const UNDELETEABLE_TIERS = ['Galaxy', 'Perfect', 'Secret', 'Scenic'];
         const RARE_BOOST_CHANCE = 0.0109; // 1.09% chance
         const SECRET_RARE_CHANCE = 0.00025; // 0.025% chance (1 in 4,000)
+        const SCENIC_RARE_CHANCE = 0.00014286; // 1 in 7,000 - RARER than Secret!
+        
+        // SCENIC RARE SYSTEM - 8 scenics × 4 pieces = 32 total collectibles
+        const SCENIC_RARES = {
+            'Portal Dimension': ['Top-Left', 'Top-Right', 'Bottom-Left', 'Bottom-Right'],
+            'Festival Fireworks': ['Top-Left', 'Top-Right', 'Bottom-Left', 'Bottom-Right'],
+            'Time Warp': ['Top-Left', 'Top-Right', 'Bottom-Left', 'Bottom-Right'],
+            'Neon Tunnel': ['Top-Left', 'Top-Right', 'Bottom-Left', 'Bottom-Right'],
+            'Kaleidoscope Burst': ['Top-Left', 'Top-Right', 'Bottom-Left', 'Bottom-Right'],
+            'Fractal Spiral': ['Top-Left', 'Top-Right', 'Bottom-Left', 'Bottom-Right'],
+            'Shattered Prism': ['Top-Left', 'Top-Right', 'Bottom-Left', 'Bottom-Right'],
+            'Rainbow Highway': ['Top-Left', 'Top-Right', 'Bottom-Left', 'Bottom-Right']
+        };
+        
+        let collectedScenicPieces = {}; // Track which pieces player has collected
+        
+        // Initialize scenic pieces tracking
+        function initializeScenicTracking() {
+            for (const scenicName in SCENIC_RARES) {
+                if (!collectedScenicPieces[scenicName]) {
+                    collectedScenicPieces[scenicName] = {
+                        'Top-Left': false,
+                        'Top-Right': false,
+                        'Bottom-Left': false,
+                        'Bottom-Right': false
+                    };
+                }
+            }
+        }
+        
+        // Roll for a scenic rare piece (NO DUPLICATES!)
+        function rollScenicRare() {
+            const availablePieces = [];
+            
+            // Find all uncollected pieces
+            for (const scenicName in SCENIC_RARES) {
+                for (const piece of SCENIC_RARES[scenicName]) {
+                    if (!collectedScenicPieces[scenicName][piece]) {
+                        availablePieces.push({ name: scenicName, piece: piece });
+                    }
+                }
+            }
+            
+            // If all pieces collected, return null
+            if (availablePieces.length === 0) {
+                console.log('🎉 ALL SCENIC PIECES COLLECTED!');
+                return null;
+            }
+            
+            // Pick random available piece
+            const rolled = availablePieces[Math.floor(Math.random() * availablePieces.length)];
+            
+            // Mark as collected
+            collectedScenicPieces[rolled.name][rolled.piece] = true;
+            
+            console.log(`🌈 SCENIC RARE! ${rolled.name}: ${rolled.piece}`);
+            return rolled;
+        }
+        
+        // Paint splotch celebration animation
+        function triggerPaintSplotchCelebration(scenicRoll) {
+            // Show text
+            const celebText = document.createElement('div');
+            celebText.className = 'scenic-celebration';
+            celebText.textContent = `🎨 SCENIC RARE PIECE! 🎨\n${scenicRoll.name}: ${scenicRoll.piece}`;
+            document.body.appendChild(celebText);
+            
+            setTimeout(() => celebText.remove(), 2000);
+            
+            // Paint splotches flying out
+            const colors = ['#FF6B6B', '#4ECDC4', '#FFD93D', '#95E1D3', '#F38181', '#AA96DA', '#FCBAD3', '#A8E6CF'];
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    const splotch = document.createElement('div');
+                    splotch.className = 'paint-splotch';
+                    splotch.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    splotch.style.left = centerX + 'px';
+                    splotch.style.top = centerY + 'px';
+                    
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = 200 + Math.random() * 300;
+                    const tx = Math.cos(angle) * distance;
+                    const ty = Math.sin(angle) * distance;
+                    
+                    splotch.style.setProperty('--tx', tx + 'px');
+                    splotch.style.setProperty('--ty', ty + 'px');
+                    
+                    document.body.appendChild(splotch);
+                    
+                    setTimeout(() => splotch.remove(), 1500);
+                }, i * 50);
+            }
+        }
+        
+        // Render scenic rare gallery
+        function renderScenicGallery(container) {
+            for (const scenicName in SCENIC_RARES) {
+                const scenicContainer = document.createElement('div');
+                scenicContainer.className = 'scenic-container';
+                scenicContainer.style.cursor = 'pointer';
+                
+                // Check if complete
+                const isComplete = SCENIC_RARES[scenicName].every(piece => 
+                    collectedScenicPieces[scenicName][piece]
+                );
+                
+                if (isComplete) {
+                    scenicContainer.classList.add('complete');
+                }
+                
+                // Scenic name label
+                const nameLabel = document.createElement('div');
+                nameLabel.className = 'scenic-name';
+                nameLabel.textContent = scenicName;
+                scenicContainer.appendChild(nameLabel);
+                
+                // 4-piece grid
+                const piecesGrid = document.createElement('div');
+                piecesGrid.className = 'scenic-pieces-grid';
+                
+                SCENIC_RARES[scenicName].forEach(piece => {
+                    const pieceDiv = document.createElement('div');
+                    pieceDiv.className = 'scenic-piece';
+                    
+                    const isUnlocked = collectedScenicPieces[scenicName][piece];
+                    
+                    if (isUnlocked) {
+                        pieceDiv.classList.add('unlocked');
+                        
+                        // Find the actual scenic piece in storage
+                        const scenicItem = storage.find(item => 
+                            item.isScenic && 
+                            item.scenicName === scenicName && 
+                            item.scenicPiece === piece
+                        );
+                        
+                        if (scenicItem && scenicItem.grid && scenicItem.grid.length > 0) {
+                            // Render mini grid
+                            const miniGrid = document.createElement('div');
+                            miniGrid.style.display = 'grid';
+                            miniGrid.style.gridTemplateColumns = `repeat(40, 1fr)`;
+                            miniGrid.style.width = '100%';
+                            miniGrid.style.height = '100%';
+                            miniGrid.style.gap = '0';
+                            
+                            scenicItem.grid.forEach(color => {
+                                const miniCell = document.createElement('div');
+                                miniCell.style.backgroundColor = COLORS[color];
+                                miniCell.style.width = '100%';
+                                miniCell.style.height = '100%';
+                                miniCell.style.border = 'none';
+                                miniCell.style.outline = 'none';
+                                miniCell.style.margin = '0';
+                                miniCell.style.padding = '0';
+                                miniCell.style.boxSizing = 'border-box';
+                                miniCell.style.display = 'block';
+                                miniCell.style.overflow = 'hidden';
+                                miniGrid.appendChild(miniCell);
+                            });
+                            
+                            pieceDiv.innerHTML = '';
+                            pieceDiv.appendChild(miniGrid);
+                        } else {
+                            // DEBUG: Show error if grid not found
+                            console.error(`Grid not found for ${scenicName}: ${piece}`, scenicItem);
+                            pieceDiv.textContent = '!';
+                            pieceDiv.style.color = 'red';
+                        }
+                    } else {
+                        pieceDiv.classList.add('locked');
+                        pieceDiv.textContent = '?';
+                    }
+                    
+                    pieceDiv.title = `${scenicName}: ${piece}`;
+                    piecesGrid.appendChild(pieceDiv);
+                });
+                
+                scenicContainer.appendChild(piecesGrid);
+                
+                // Click to inspect scenic collection details
+                scenicContainer.addEventListener('click', () => {
+                    showScenicDetails(scenicName);
+                });
+                
+                container.appendChild(scenicContainer);
+            }
+        }
+        
+        // Show scenic collection details modal
+        function showScenicDetails(scenicName) {
+            const modal = document.getElementById('inspect-modal');
+            const inspectGrid = document.getElementById('inspect-grid');
+            const inspectTitle = document.getElementById('inspect-title');
+            const colorDistribution = document.getElementById('color-distribution');
+            
+            inspectTitle.textContent = `${scenicName} Collection`;
+            inspectGrid.innerHTML = '';
+            
+            const isComplete = SCENIC_RARES[scenicName].every(piece => 
+                collectedScenicPieces[scenicName][piece]
+            );
+            
+            let detailsHTML = '<div style="padding: 20px;">';
+            
+            if (isComplete) {
+                detailsHTML += `
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <div style="font-size: 4em;">🎉</div>
+                        <h2 style="color: #FFD700; margin: 15px 0;">COMPLETE!</h2>
+                        <p style="font-size: 1.2em;">All 4 pieces collected!</p>
+                    </div>
+                `;
+            } else {
+                detailsHTML += `
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <div style="font-size: 3em;">🎨</div>
+                        <h2 style="color: #FFD700; margin: 15px 0;">Collection Progress</h2>
+                    </div>
+                `;
+            }
+            
+            // 2x2 grid container with NO gaps - just like storage!
+            detailsHTML += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 2px solid rgba(255,255,255,0.3); max-width: 600px; margin: 0 auto; background: rgba(0,0,0,0.3);">';
+            
+            SCENIC_RARES[scenicName].forEach(piece => {
+                const isUnlocked = collectedScenicPieces[scenicName][piece];
+                const safeId = `scenic-piece-${scenicName.replace(/\s+/g, '-')}-${piece.replace(/\s+/g, '-')}`;
+                
+                detailsHTML += `
+                    <div id="${safeId}" style="width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 4em; background: transparent; border: none; margin: 0; padding: 0; overflow: hidden;">
+                        ${isUnlocked ? '' : '?'}
+                    </div>
+                `;
+            });
+            
+            detailsHTML += '</div>';
+            
+            // Show labels BELOW the 2x2 grid
+            detailsHTML += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 600px; margin: 20px auto 0;">';
+            SCENIC_RARES[scenicName].forEach(piece => {
+                const isUnlocked = collectedScenicPieces[scenicName][piece];
+                const status = isUnlocked ? '✓ Collected' : '? Locked';
+                const color = isUnlocked ? '#4CAF50' : '#666';
+                
+                detailsHTML += `
+                    <div style="text-align: center; padding: 10px;">
+                        <div style="font-weight: bold; margin-bottom: 5px;">${piece}</div>
+                        <div style="color: ${color};">${status}</div>
+                    </div>
+                `;
+            });
+            detailsHTML += '</div></div>';
+            
+            colorDistribution.innerHTML = detailsHTML;
+            
+            // Now render actual grids for unlocked pieces
+            SCENIC_RARES[scenicName].forEach(piece => {
+                const isUnlocked = collectedScenicPieces[scenicName][piece];
+                
+                if (isUnlocked) {
+                    const scenicItem = storage.find(item => 
+                        item.isScenic && 
+                        item.scenicName === scenicName && 
+                        item.scenicPiece === piece
+                    );
+                    
+                    console.log(`Inspect modal - Looking for ${scenicName}:${piece}`, scenicItem);
+                    
+                    if (scenicItem && scenicItem.grid && scenicItem.grid.length > 0) {
+                        // Use setTimeout to ensure DOM is ready
+                        setTimeout(() => {
+                            const containerId = `scenic-piece-${scenicName.replace(/\s+/g, '-')}-${piece.replace(/\s+/g, '-')}`;
+                            const container = document.getElementById(containerId);
+                            
+                            console.log(`Trying to render in container: ${containerId}`, container);
+                            
+                            if (container) {
+                                container.innerHTML = '';
+                                container.style.fontSize = '1em';
+                                
+                                const miniGrid = document.createElement('div');
+                                miniGrid.style.display = 'grid';
+                                miniGrid.style.gridTemplateColumns = `repeat(40, 1fr)`;
+                                miniGrid.style.width = '100%';
+                                miniGrid.style.height = '100%';
+                                miniGrid.style.gap = '0';
+                                miniGrid.style.border = 'none';
+                                
+                                scenicItem.grid.forEach(color => {
+                                    const miniCell = document.createElement('div');
+                                    miniCell.style.backgroundColor = COLORS[color];
+                                    miniCell.style.width = '100%';
+                                    miniCell.style.height = '100%';
+                                    miniCell.style.border = 'none';
+                                    miniCell.style.outline = 'none';
+                                    miniCell.style.margin = '0';
+                                    miniCell.style.padding = '0';
+                                    miniCell.style.boxSizing = 'border-box';
+                                    miniCell.style.display = 'block';
+                                    miniCell.style.overflow = 'hidden';
+                                    miniGrid.appendChild(miniCell);
+                                });
+                                
+                                container.appendChild(miniGrid);
+                                console.log(`Grid rendered! ${scenicItem.grid.length} cells`);
+                            } else {
+                                console.error(`Container not found: ${containerId}`);
+                            }
+                        }, 50);
+                    } else {
+                        console.error(`No grid data for ${scenicName}:${piece}`);
+                    }
+                }
+            });
+            
+            colorDistribution.innerHTML = detailsHTML;
+            modal.classList.add('active');
+        }
         
         // Storage optimization: Set to true to only save Uncommon+ grids (saves 80% space!)
         const ONLY_SAVE_GOOD_GRIDS = true; // Change to false to save all grids
@@ -2066,7 +2489,466 @@
         // ===== GAME FUNCTIONS =====
         
         function generateGrid() {
-            // Check for SECRET RARE first (0.025% chance)
+            // Check for SCENIC RARE first (1 in 7,000 - RARER than Secret!)
+            if (Math.random() < SCENIC_RARE_CHANCE) {
+                const scenicRoll = rollScenicRare();
+                if (scenicRoll) {
+                    // Paint splotch celebration!
+                    triggerPaintSplotchCelebration(scenicRoll);
+                    
+                    // Generate a colorful grid for this scenic piece (placeholder pattern)
+                    const scenicGrid = generateScenicPieceGrid(scenicRoll.name, scenicRoll.piece);
+                    
+                    // Return special scenic object
+                    return {
+                        grid: scenicGrid,
+                        tier: 'Scenic',
+                        scenicName: scenicRoll.name,
+                        scenicPiece: scenicRoll.piece,
+                        isScenic: true,
+                        percentage: 1.0,
+                        tierClass: 'tier-scenic'
+                    };
+                }
+            }
+            
+            // Generate REAL scenic piece grid with actual artwork
+            function generateScenicPieceGrid(scenicName, pieceName) {
+                // First generate the FULL 80×50 scenic artwork
+                const fullScenic = generateFullScenic(scenicName);
+                
+                // Then extract the specific 40×25 piece
+                return extractPiece(fullScenic, pieceName);
+            }
+            
+            // Extract a 40×25 piece from an 80×50 grid
+            function extractPiece(full80x50Grid, pieceName) {
+                const piece = [];
+                let startX = 0, startY = 0;
+                
+                // Determine which quadrant
+                if (pieceName === 'Top-Left') { startX = 0; startY = 0; }
+                else if (pieceName === 'Top-Right') { startX = 40; startY = 0; }
+                else if (pieceName === 'Bottom-Left') { startX = 0; startY = 25; }
+                else if (pieceName === 'Bottom-Right') { startX = 40; startY = 25; }
+                
+                // Extract 40×25 section
+                for (let y = 0; y < 25; y++) {
+                    for (let x = 0; x < 40; x++) {
+                        const fullIndex = (startY + y) * 80 + (startX + x);
+                        piece.push(full80x50Grid[fullIndex]);
+                    }
+                }
+                
+                return piece;
+            }
+            
+            // Generate full 80×50 scenic artwork
+            function generateFullScenic(scenicName) {
+                switch(scenicName) {
+                    case 'Portal Dimension': return generatePortalDimension();
+                    case 'Festival Fireworks': return generateFestivalFireworks();
+                    case 'Time Warp': return generateTimeWarp();
+                    case 'Neon Tunnel': return generateNeonTunnel();
+                    case 'Kaleidoscope Burst': return generateKaleidoscopeBurst();
+                    case 'Fractal Spiral': return generateFractalSpiral();
+                    case 'Shattered Prism': return generateShatteredPrism();
+                    case 'Rainbow Highway': return generateRainbowHighway();
+                    default: return generatePortalDimension(); // fallback
+                }
+            }
+            
+            // PORTAL DIMENSION - Swirling purple/pink vortex
+            function generatePortalDimension() {
+                const img = [];
+                const centerX = 40, centerY = 25;
+                
+                for (let y = 0; y < 50; y++) {
+                    for (let x = 0; x < 80; x++) {
+                        let color = 'black';
+                        const dx = x - centerX, dy = y - centerY;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx);
+                        const spiralFactor = angle + distance * 0.15;
+                        
+                        if (distance < 25) {
+                            if (distance < 5) color = 'white';
+                            else if (distance < 12) {
+                                color = Math.sin(spiralFactor * 3) > 0 ? 'purple' : 'pink';
+                            }
+                            else if (distance < 18) {
+                                const s = Math.sin(spiralFactor * 2);
+                                color = s > 0.3 ? 'blue' : (s > -0.3 ? 'purple' : 'black');
+                            }
+                            else if (Math.sin(spiralFactor * 1.5) > 0.5) color = 'purple';
+                        }
+                        
+                        if (distance > 15 && distance < 35 && Math.random() < 0.02) {
+                            color = Math.random() < 0.5 ? 'pink' : 'purple';
+                        }
+                        if (distance > 25 && Math.random() < 0.015) color = 'white';
+                        
+                        img.push(color);
+                    }
+                }
+                return img;
+            }
+            
+            // FESTIVAL FIREWORKS - 5 colorful bursts with ray effects
+            function generateFestivalFireworks() {
+                const img = [];
+                const bursts = [
+                    {x: 20, y: 12, size: 10, color1: 'red', color2: 'orange'},
+                    {x: 45, y: 8, size: 14, color1: 'blue', color2: 'white'},
+                    {x: 65, y: 15, size: 12, color1: 'purple', color2: 'pink'},
+                    {x: 30, y: 20, size: 8, color1: 'green', color2: 'yellow'},
+                    {x: 55, y: 18, size: 11, color1: 'pink', color2: 'purple'}
+                ];
+                
+                for (let y = 0; y < 50; y++) {
+                    for (let x = 0; x < 80; x++) {
+                        let color = 'black';
+                        
+                        // Stars
+                        if (Math.random() < 0.01) color = 'white';
+                        
+                        // Firework bursts
+                        for (const burst of bursts) {
+                            const dist = Math.sqrt((x - burst.x) ** 2 + (y - burst.y) ** 2);
+                            const angle = Math.atan2(y - burst.y, x - burst.x);
+                            
+                            // Ray pattern
+                            const rayAngle = Math.floor(angle * 12 / Math.PI) * Math.PI / 12;
+                            const rayDist = Math.abs(angle - rayAngle) * dist;
+                            
+                            if (dist < 2) color = 'white'; // Center
+                            else if (dist < burst.size && rayDist < 0.5) color = burst.color1;
+                            else if (dist < burst.size + 3 && rayDist < 0.3) color = burst.color2;
+                            else if (dist < burst.size + 5 && Math.random() < 0.05) color = burst.color1;
+                        }
+                        
+                        // City silhouette at bottom
+                        if (y >= 40) {
+                            if ((x >= 10 && x <= 20 && y >= 42) ||
+                                (x >= 25 && x <= 32 && y >= 40) ||
+                                (x >= 38 && x <= 45 && y >= 43) ||
+                                (x >= 50 && x <= 58 && y >= 41) ||
+                                (x >= 63 && x <= 72 && y >= 42)) {
+                                color = 'black';
+                            }
+                        }
+                        
+                        if (y >= 48) color = 'black'; // Ground
+                        
+                        img.push(color);
+                    }
+                }
+                return img;
+            }
+            
+            // TIME WARP - Warped clock face with space-time distortion
+            function generateTimeWarp() {
+                const img = [];
+                const centerX = 40, centerY = 25;
+                
+                for (let y = 0; y < 50; y++) {
+                    for (let x = 0; x < 80; x++) {
+                        let color = 'purple';
+                        const dx = x - centerX, dy = y - centerY;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx);
+                        
+                        // Warped space-time background
+                        const warp = Math.sin(angle * 3 + distance * 0.2);
+                        if (warp > 0.5) color = 'blue';
+                        else if (warp > 0) color = 'purple';
+                        else color = 'pink';
+                        
+                        // Clock face (grey circle)
+                        if (distance >= 12 && distance <= 18) {
+                            color = 'white';
+                        }
+                        if (distance < 12) {
+                            color = 'grey';
+                            
+                            // Clock hands
+                            const hand1 = Math.abs(angle - 0.5) < 0.1 && distance < 10;
+                            const hand2 = Math.abs(angle - 2.5) < 0.1 && distance < 8;
+                            if (hand1 || hand2) color = 'black';
+                            
+                            // Hour markers (12 positions)
+                            if (distance > 9 && distance < 11) {
+                                if (Math.abs(Math.sin(angle * 6)) > 0.9) {
+                                    color = 'black';
+                                }
+                            }
+                        }
+                        
+                        // Time fragments floating
+                        if (distance > 20 && distance < 30) {
+                            const fragment = Math.sin(angle * 8 + y * 0.3);
+                            if (fragment > 0.85) {
+                                color = Math.random() < 0.5 ? 'white' : 'grey';
+                            }
+                        }
+                        
+                        // Time particles
+                        if (Math.random() < 0.01) {
+                            color = Math.random() < 0.5 ? 'yellow' : 'white';
+                        }
+                        
+                        img.push(color);
+                    }
+                }
+                return img;
+            }
+            
+            // NEON TUNNEL - Perspective rings
+            function generateNeonTunnel() {
+                const img = [];
+                const centerX = 40, centerY = 25;
+                
+                for (let y = 0; y < 50; y++) {
+                    for (let x = 0; x < 80; x++) {
+                        let color = 'black';
+                        const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+                        const angle = Math.atan2(y - centerY, x - centerX);
+                        
+                        const ringNum = Math.floor(distance / 4);
+                        const ringPos = distance % 4;
+                        
+                        if (ringPos < 2) {
+                            const colors = ['pink', 'purple', 'blue', 'green', 'yellow', 'orange'];
+                            color = colors[ringNum % colors.length];
+                        }
+                        
+                        if (distance < 3) color = 'white';
+                        if (Math.random() < 0.02) color = 'white'; // Speed lines
+                        
+                        img.push(color);
+                    }
+                }
+                return img;
+            }
+            
+            // KALEIDOSCOPE BURST - Symmetrical rainbow radiating pattern
+            function generateKaleidoscopeBurst() {
+                const img = [];
+                const centerX = 40, centerY = 25;
+                
+                for (let y = 0; y < 50; y++) {
+                    for (let x = 0; x < 80; x++) {
+                        let color = 'black';
+                        
+                        const dx = x - centerX, dy = y - centerY;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx);
+                        
+                        // Create 8-way symmetry
+                        const segments = 8;
+                        const segmentAngle = (Math.PI * 2) / segments;
+                        const normalizedAngle = ((angle + Math.PI) % segmentAngle) / segmentAngle;
+                        
+                        // Rainbow rings based on distance
+                        const ringNum = Math.floor(distance / 3);
+                        const rainbowColors = ['white', 'yellow', 'orange', 'red', 'pink', 'purple', 'blue', 'green'];
+                        
+                        // Pattern within each segment
+                        const pattern = Math.sin(normalizedAngle * 20 + distance * 0.3);
+                        
+                        if (pattern > 0.3) {
+                            color = rainbowColors[ringNum % rainbowColors.length];
+                        } else if (pattern > -0.3) {
+                            const idx = (ringNum + 1) % rainbowColors.length;
+                            color = rainbowColors[idx];
+                        } else {
+                            color = 'black';
+                        }
+                        
+                        // Bright center
+                        if (distance < 5) color = 'white';
+                        
+                        // Add sparkles
+                        if (distance > 5 && Math.random() < 0.01) {
+                            color = Math.random() < 0.5 ? 'white' : 'yellow';
+                        }
+                        
+                        img.push(color);
+                    }
+                }
+                return img;
+            }
+            
+            // FRACTAL SPIRAL - Mathematical spiral with color gradients
+            function generateFractalSpiral() {
+                const img = [];
+                const centerX = 40, centerY = 25;
+                
+                for (let y = 0; y < 50; y++) {
+                    for (let x = 0; x < 80; x++) {
+                        let color = 'black';
+                        
+                        const dx = x - centerX, dy = y - centerY;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx);
+                        
+                        // Golden spiral formula
+                        const spiralValue = angle + Math.log(distance + 1) * 2;
+                        const spiralMod = spiralValue % (Math.PI / 2);
+                        
+                        // Color based on spiral position
+                        const rainbowColors = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'white'];
+                        const colorIdx = Math.floor((spiralValue + Math.PI * 4) / (Math.PI / 4)) % rainbowColors.length;
+                        
+                        // Create the spiral bands
+                        if (spiralMod < 0.5) {
+                            color = rainbowColors[colorIdx];
+                        } else if (spiralMod < 1.0) {
+                            color = rainbowColors[(colorIdx + 1) % rainbowColors.length];
+                        }
+                        
+                        // Add smaller recursive spirals
+                        const miniSpiral = Math.sin(spiralValue * 4) * distance * 0.1;
+                        if (miniSpiral > 2 && miniSpiral < 3) {
+                            color = 'white';
+                        }
+                        
+                        // Center glow
+                        if (distance < 8) {
+                            const glowColors = ['white', 'yellow', 'orange'];
+                            color = glowColors[Math.floor(distance / 3)];
+                        }
+                        
+                        // Sparkle particles
+                        if (Math.random() < 0.008) {
+                            color = Math.random() < 0.7 ? 'white' : rainbowColors[Math.floor(Math.random() * rainbowColors.length)];
+                        }
+                        
+                        img.push(color);
+                    }
+                }
+                return img;
+            }
+            
+            // SHATTERED PRISM - Fractured glass
+            function generateShatteredPrism() {
+                const img = [];
+                const centerX = 40, centerY = 25;
+                
+                for (let y = 0; y < 50; y++) {
+                    for (let x = 0; x < 80; x++) {
+                        let color = 'white';
+                        
+                        // Crack lines radiating from center
+                        const angle = Math.atan2(y - centerY, x - centerX);
+                        const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+                        
+                        const crackAngle = Math.round(angle / (Math.PI / 6)) * (Math.PI / 6);
+                        const angleDiff = Math.abs(angle - crackAngle);
+                        
+                        if (angleDiff < 0.1) color = 'grey';
+                        
+                        // Rainbow refraction
+                        const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink'];
+                        const section = Math.floor((angle + Math.PI) / (Math.PI * 2 / 7));
+                        
+                        if (Math.random() < 0.3) {
+                            color = colors[section];
+                        }
+                        
+                        img.push(color);
+                    }
+                }
+                return img;
+            }
+            
+            // RAINBOW HIGHWAY - Grid road with rainbow colors and perspective
+            function generateRainbowHighway() {
+                const img = [];
+                
+                for (let y = 0; y < 50; y++) {
+                    for (let x = 0; x < 80; x++) {
+                        let color = 'black'; // Space
+                        
+                        // Sky gradient (top)
+                        if (y < 15) color = 'purple';
+                        else if (y < 20) color = 'pink';
+                        
+                        // Sun (top center)
+                        const sunDist = Math.sqrt((x - 40) ** 2 + (y - 12) ** 2);
+                        if (sunDist < 8) {
+                            color = y % 2 === 0 ? 'orange' : 'yellow';
+                        } else if (sunDist < 10 && Math.random() < 0.5) {
+                            color = 'orange';
+                        }
+                        
+                        // RAINBOW GRID ROAD (bottom half)
+                        if (y >= 20) {
+                            color = 'black';
+                            
+                            // Horizontal grid lines (getting closer together toward horizon)
+                            const lineSpacing = 3 + (50 - y) * 0.2;
+                            const isHorizontalLine = y % Math.max(2, Math.floor(lineSpacing)) === 0;
+                            
+                            // Vertical grid lines (perspective)
+                            const perspectiveX = 40 + (x - 40) * (1 + (y - 20) * 0.02);
+                            const isVerticalLine = Math.floor(perspectiveX) % 8 === 0;
+                            
+                            if (isHorizontalLine || isVerticalLine) {
+                                // Rainbow color based on x position
+                                const rainbowColors = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink'];
+                                const colorIndex = Math.floor((x / 80) * rainbowColors.length);
+                                color = rainbowColors[colorIndex];
+                                
+                                // Fade colors in distance
+                                if (y > 35 && Math.random() < 0.3) {
+                                    const fadeColors = ['purple', 'blue', 'pink'];
+                                    color = fadeColors[Math.floor(Math.random() * fadeColors.length)];
+                                }
+                            }
+                            
+                            // Subtle rainbow road coloring between grid lines
+                            if (!isHorizontalLine && !isVerticalLine && Math.random() < 0.05) {
+                                const sectionWidth = 80 / 7;
+                                const section = Math.floor(x / sectionWidth);
+                                const rainbowBase = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink'];
+                                color = rainbowBase[section];
+                            }
+                        }
+                        
+                        // Mountains with rainbow edges
+                        if (y >= 18 && y <= 25) {
+                            const peak1 = Math.abs(x - 25) * 0.4;
+                            const peak2 = Math.abs(x - 55) * 0.3;
+                            
+                            if (y > (18 + peak1) || y > (18 + peak2)) {
+                                color = 'purple';
+                                
+                                // Rainbow outline
+                                const isEdge = (Math.abs(y - (18 + peak1)) < 1 && y > (18 + peak1)) ||
+                                              (Math.abs(y - (18 + peak2)) < 1 && y > (18 + peak2));
+                                
+                                if (isEdge) {
+                                    const rainbowColors = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink'];
+                                    const colorIndex = Math.floor((x / 80) * rainbowColors.length);
+                                    color = rainbowColors[colorIndex];
+                                }
+                            }
+                        }
+                        
+                        // Rainbow stars
+                        if (y < 18 && Math.random() < 0.015) {
+                            const starColors = ['white', 'yellow', 'pink', 'blue'];
+                            color = starColors[Math.floor(Math.random() * starColors.length)];
+                        }
+                        
+                        img.push(color);
+                    }
+                }
+                return img;
+            }
+            
+            // Check for SECRET RARE (0.025% chance)
             if (Math.random() < SECRET_RARE_CHANCE) {
                 const secretGrid = generateSecretRareGrid();
                 triggerSecretCelebration(secretGrid.secretDesign);
@@ -2250,6 +3132,14 @@
 
         function updateStorageDisplay() {
             const storageGrid = document.getElementById('storage-grid');
+            storageGrid.innerHTML = '';
+            
+            // SCENIC RARE FILTER - Show scenic gallery
+            if (currentFilter === 'Scenic') {
+                renderScenicGallery(storageGrid);
+                document.getElementById('storage-count').textContent = `${Object.keys(SCENIC_RARES).length} Scenic Collections`;
+                return;
+            }
             
             // Filter storage based on current filter
             let filteredStorage = storage;
@@ -2259,9 +3149,10 @@
             
             document.getElementById('storage-count').textContent = `${filteredStorage.length} items`;
             
-            storageGrid.innerHTML = '';
-            
             filteredStorage.forEach((item, index) => {
+                // Skip scenic pieces in normal view (they're in scenic gallery)
+                if (item.isScenic) return;
+                
                 const canDelete = !UNDELETEABLE_TIERS.includes(item.tier) && !favorites.has(item.rollNumber);
                 
                 const storageItem = document.createElement('div');
@@ -2413,19 +3304,26 @@
             const inspectTitle = document.getElementById('inspect-title');
             const colorDistribution = document.getElementById('color-distribution');
             
-            if (item.isSecret) {
+            if (item.isScenic) {
+                inspectTitle.textContent = `Roll #${item.rollNumber} - SCENIC RARE PIECE`;
+                inspectGrid.innerHTML = '';
+                colorDistribution.innerHTML = `
+                    <div style="text-align: center; padding: 30px;">
+                        <div style="font-size: 3em; margin-bottom: 20px;">🎨</div>
+                        <h2 style="color: #FFD700; margin-bottom: 15px;">${item.scenicName}</h2>
+                        <p style="font-size: 1.5em; margin-bottom: 10px;">${item.scenicPiece}</p>
+                        <p style="opacity: 0.8; margin-top: 20px;">Collect all 4 pieces to complete this scenic!</p>
+                    </div>
+                `;
+            } else if (item.isSecret) {
                 inspectTitle.textContent = `Roll #${item.rollNumber} - SECRET RARE: ${item.secretDesign}`;
+                renderGrid(item.grid, inspectGrid, 'inspect-cell');
+                colorDistribution.innerHTML = '<p style="text-align: center; font-size: 1.2em; padding: 20px;">✨ SECRET RARE DESIGN ✨<br><br>This is a special pixel art design!<br><br><strong>' + item.secretDesign + '</strong></p>';
             } else {
                 inspectTitle.textContent = `Roll #${item.rollNumber} - ${item.tier} Tier`;
-            }
-            
-            renderGrid(item.grid, inspectGrid, 'inspect-cell');
-            
-            colorDistribution.innerHTML = '<h3>Color Distribution</h3>';
-            
-            if (item.isSecret) {
-                colorDistribution.innerHTML += '<p style="text-align: center; font-size: 1.2em; padding: 20px;">✨ SECRET RARE DESIGN ✨<br><br>This is a special pixel art design!<br><br><strong>' + item.secretDesign + '</strong></p>';
-            } else {
+                renderGrid(item.grid, inspectGrid, 'inspect-cell');
+                
+                colorDistribution.innerHTML = '<h3>Color Distribution</h3>';
                 const sortedColors = Object.entries(item.colorCounts)
                     .sort((a, b) => b[1] - a[1]);
                 
@@ -2491,12 +3389,25 @@
                 nextRollIsLucky = true;
             }
             
-            const grid = generateGrid();
-            const tierInfo = calculateTier(grid);
+            const gridResult = generateGrid();
+            
+            // Check if it's a Scenic Rare (already has tier info)
+            let tierInfo;
+            let grid;
+            
+            if (gridResult.isScenic) {
+                // It's a Scenic! Use the tierInfo as-is
+                tierInfo = gridResult;
+                grid = gridResult.grid;
+            } else {
+                // Normal grid, calculate tier
+                grid = gridResult;
+                tierInfo = calculateTier(grid);
+            }
             
             colorCoins++;
             
-            const tierHierarchy = ['Common', 'Uncommon', 'Gold', 'Elite', 'Mythic', 'Galaxy', 'Perfect', 'Secret'];
+            const tierHierarchy = ['Common', 'Uncommon', 'Gold', 'Elite', 'Mythic', 'Galaxy', 'Perfect', 'Secret', 'Scenic'];
             if (!bestTier || tierHierarchy.indexOf(tierInfo.tier) > tierHierarchy.indexOf(bestTier)) {
                 bestTier = tierInfo.tier;
             }
@@ -2519,7 +3430,17 @@
             renderGrid(grid, document.getElementById('preview-grid'));
             
             // Display tier information
-            if (tierInfo.isSecret) {
+            if (tierInfo.isScenic) {
+                document.getElementById('current-tier').innerHTML = `
+                    <span class="tier-badge ${tierInfo.tierClass}">SCENIC RARE</span><br>
+                    ${tierInfo.scenicName}: ${tierInfo.scenicPiece}
+                `;
+                // Add special border
+                document.getElementById('current-preview').classList.add('secret-grid-border');
+                setTimeout(() => {
+                    document.getElementById('current-preview').classList.remove('secret-grid-border');
+                }, 5000);
+            } else if (tierInfo.isSecret) {
                 document.getElementById('current-tier').innerHTML = `
                     <span class="tier-badge ${tierInfo.tierClass}">SECRET</span><br>
                     ${tierInfo.secretDesign}
@@ -2622,7 +3543,8 @@
             updateStorageDisplay();
         });
 
-        // Initialize with a sample roll
+        // Initialize
+        initializeScenicTracking();
         updateStats();
     </script>
 </body>
