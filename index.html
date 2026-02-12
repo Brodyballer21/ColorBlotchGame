@@ -2311,6 +2311,7 @@
                     totalRolls,
                     colorCoins,
                     bestTier,
+                    collectedScenicPieces, // Save scenic tracking!
                     storage: storage.map(item => {
                         // Compress the grid to save MASSIVE space
                         const compressedGrid = compressGrid(item.grid);
@@ -2324,6 +2325,9 @@
                             colorCounts: item.colorCounts || {},
                             isSecret: item.isSecret || false,
                             secretDesign: item.secretDesign || '',
+                            isScenic: item.isScenic || false, // Save scenic flag!
+                            scenicName: item.scenicName || '', // Save scenic name!
+                            scenicPiece: item.scenicPiece || '', // Save scenic piece!
                             grid: compressedGrid, // Store compressed string instead of 1000-item array
                             timestamp: item.timestamp ? item.timestamp.toString() : new Date().toString()
                         };
@@ -2368,6 +2372,26 @@
                     totalRolls = data.totalRolls || 0;
                     colorCoins = data.colorCoins || 0;
                     bestTier = data.bestTier || null;
+                    
+                    // Load scenic tracking!
+                    if (data.collectedScenicPieces) {
+                        collectedScenicPieces = data.collectedScenicPieces;
+                    } else {
+                        // Initialize if not present in save
+                        initializeScenicTracking();
+                    }
+                    
+                    // MIGRATION: Rebuild scenic tracking from existing storage items
+                    // This fixes users who pulled scenic pieces before tracking was saved
+                    storage.forEach(item => {
+                        if (item.isScenic && item.scenicName && item.scenicPiece) {
+                            if (!collectedScenicPieces[item.scenicName]) {
+                                collectedScenicPieces[item.scenicName] = {};
+                            }
+                            collectedScenicPieces[item.scenicName][item.scenicPiece] = true;
+                            console.log(`✅ Migrated scenic piece: ${item.scenicName} - ${item.scenicPiece}`);
+                        }
+                    });
                     
                     // Decompress grids when loading
                     storage = (data.storage || []).map(item => {
