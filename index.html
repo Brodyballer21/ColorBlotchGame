@@ -1482,6 +1482,7 @@
                 <button class="filter-btn" data-tier="Uncommon">Uncommon</button>
                 <button class="select-all-btn" id="select-all-btn" style="display: none;">Select All</button>
                 <button class="bulk-delete-btn" id="bulk-delete-btn" style="display: none;">Delete Selected</button>
+                <button class="filter-btn" id="fix-scenics-btn" style="background: #FF4081; margin-left: 10px;">🔧 Fix Broken Scenics</button>
             </div>
             <div class="storage-grid" id="storage-grid"></div>
         </div>
@@ -3611,6 +3612,109 @@
             });
             
             updateStorageDisplay();
+        });
+
+        // Fix Broken Scenics button
+        document.getElementById('fix-scenics-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('fix-scenics-btn');
+            btn.textContent = '🔧 Scanning...';
+            btn.disabled = true;
+            
+            // Find all Scenic tier items without metadata
+            const brokenScenicItems = storage.filter(item => 
+                item.tier === 'Scenic' && !item.isScenic
+            );
+            
+            if (brokenScenicItems.length === 0) {
+                alert('✅ No broken scenic pieces found! All scenics are properly tagged.');
+                btn.textContent = '🔧 Fix Broken Scenics';
+                btn.disabled = false;
+                return;
+            }
+            
+            console.log(`🔧 Found ${brokenScenicItems.length} broken scenic piece(s). Starting repair...`);
+            
+            let fixedCount = 0;
+            
+            // For each broken item, try to identify it
+            for (const item of brokenScenicItems) {
+                console.log(`\n🔍 Analyzing Roll #${item.rollNumber}...`);
+                
+                let identified = false;
+                
+                // Try to match against all possible scenic pieces
+                for (const scenicName in SCENIC_RARES) {
+                    if (identified) break;
+                    
+                    for (const piece of SCENIC_RARES[scenicName]) {
+                        // Generate expected grid
+                        const fullScenic = generateFullScenic(scenicName);
+                        const expectedGrid = extractPiece(fullScenic, piece);
+                        
+                        // Quick check first 100 pixels
+                        let quickMatch = true;
+                        for (let i = 0; i < Math.min(100, item.grid.length); i++) {
+                            if (item.grid[i] !== expectedGrid[i]) {
+                                quickMatch = false;
+                                break;
+                            }
+                        }
+                        
+                        // If quick check passes, verify entire grid
+                        if (quickMatch && item.grid.length === expectedGrid.length) {
+                            let fullMatch = true;
+                            for (let i = 0; i < item.grid.length; i++) {
+                                if (item.grid[i] !== expectedGrid[i]) {
+                                    fullMatch = false;
+                                    break;
+                                }
+                            }
+                            
+                            if (fullMatch) {
+                                // FOUND IT!
+                                console.log(`✅ IDENTIFIED: ${scenicName} - ${piece}`);
+                                
+                                // Fix the item
+                                item.isScenic = true;
+                                item.scenicName = scenicName;
+                                item.scenicPiece = piece;
+                                
+                                // Update tracking
+                                if (!collectedScenicPieces[scenicName]) {
+                                    collectedScenicPieces[scenicName] = {};
+                                }
+                                collectedScenicPieces[scenicName][piece] = true;
+                                
+                                identified = true;
+                                fixedCount++;
+                                
+                                console.log(`🔧 Fixed Roll #${item.rollNumber}`);
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (!identified) {
+                    console.error(`❌ Could not identify Roll #${item.rollNumber}`);
+                }
+            }
+            
+            if (fixedCount > 0) {
+                // Save the fixed data
+                console.log('\n💾 Saving fixed data to Firebase...');
+                await saveGameData();
+                
+                // Update display
+                updateStorageDisplay();
+                
+                alert(`✅ SUCCESS!\n\nFixed ${fixedCount} scenic piece(s)!\n\nYour pieces now appear in the Scenic Rare filter.`);
+            } else {
+                alert('❌ Could not identify any broken scenic pieces.\n\nThey may have been corrupted or are from an older version.');
+            }
+            
+            btn.textContent = '🔧 Fix Broken Scenics';
+            btn.disabled = false;
         });
 
         // Initialize
