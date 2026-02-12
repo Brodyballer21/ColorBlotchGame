@@ -2390,8 +2390,53 @@
                             }
                             collectedScenicPieces[item.scenicName][item.scenicPiece] = true;
                             console.log(`✅ Migrated scenic piece: ${item.scenicName} - ${item.scenicPiece}`);
+                        } else if (item.tier === 'Scenic') {
+                            // Found a Scenic tier item without metadata - try to identify it
+                            console.warn(`⚠️ Found Scenic tier item without metadata (Roll #${item.rollNumber}). Attempting to identify...`);
+                            
+                            // Try to match grid against known scenic pieces
+                            for (const scenicName in SCENIC_RARES) {
+                                for (const piece of SCENIC_RARES[scenicName]) {
+                                    // Generate what this piece SHOULD look like
+                                    const expectedGrid = generateScenicPieceGrid(scenicName, piece);
+                                    
+                                    // Compare grids (first 100 pixels for speed)
+                                    let matches = true;
+                                    for (let i = 0; i < Math.min(100, item.grid.length); i++) {
+                                        if (item.grid[i] !== expectedGrid[i]) {
+                                            matches = false;
+                                            break;
+                                        }
+                                    }
+                                    
+                                    if (matches && item.grid.length === expectedGrid.length) {
+                                        // Found a match! Update the item
+                                        item.isScenic = true;
+                                        item.scenicName = scenicName;
+                                        item.scenicPiece = piece;
+                                        
+                                        if (!collectedScenicPieces[scenicName]) {
+                                            collectedScenicPieces[scenicName] = {};
+                                        }
+                                        collectedScenicPieces[scenicName][piece] = true;
+                                        
+                                        console.log(`✅ IDENTIFIED AND MIGRATED: ${scenicName} - ${piece} (Roll #${item.rollNumber})`);
+                                        
+                                        // Found it, no need to keep checking
+                                        return;
+                                    }
+                                }
+                            }
+                            
+                            console.error(`❌ Could not identify Scenic piece (Roll #${item.rollNumber})`);
                         }
                     });
+                    
+                    // Save the migrated data back to cloud
+                    if (storage.some(item => item.tier === 'Scenic' && !item.isScenic)) {
+                        console.log('💾 Saving migrated scenic data to cloud...');
+                        saveGameData();
+                    }
                     
                     // Decompress grids when loading
                     storage = (data.storage || []).map(item => {
