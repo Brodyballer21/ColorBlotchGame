@@ -816,65 +816,6 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
         }
-        
-        /* Friends System Styles */
-        .friends-btn {
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            color: #000;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 1em;
-            font-weight: bold;
-            cursor: pointer;
-            margin: 0 auto 20px auto;
-            display: block;
-            position: relative;
-        }
-        
-        .friends-btn-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #FF4081;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 0.75em;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .friends-modal, .friend-profile-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 10000;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        
-        .friends-modal.active, .friend-profile-modal.active {
-            display: flex;
-        }
-        
-        .friends-modal-content, .friend-profile-content {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 30px;
-            border-radius: 20px;
-            max-width: 600px;
-            width: 100%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
 
         /* How to Play Modal */
         .how-to-play {
@@ -1438,10 +1379,6 @@
         </div>
         
         <button class="how-to-play-btn" id="how-to-play-btn">📖 How to Play</button>
-        <button class="friends-btn" id="friends-btn" style="display: none;">
-            👥 Friends
-            <span class="friends-btn-badge" id="friends-badge" style="display: none;">0</span>
-        </button>
         
         <div class="game-stats">
             <div class="stat-item">
@@ -1615,14 +1552,6 @@
         let currentBoostPercentage = 0;
         let favorites = new Set();
         let nextRollHasRareBoost = false;
-
-        // ===== FRIENDS SYSTEM VARIABLES =====
-        let friendCode = '';
-        let showcaseGrids = [];
-        let friendsList = [];
-        let pendingRequests = [];
-        let showcaseMode = false;
-        let tempShowcaseGrids = [];
 
         // Anti-auto-clicker rate limiting
         let lastRollTime = 0;
@@ -2354,154 +2283,6 @@
             return grid;
         }
 
-        
-        // ===== FRIENDS SYSTEM FUNCTIONS =====
-        
-        function generateFriendCode() {
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            let code = '';
-            for (let i = 0; i < 6; i++) {
-                code += chars[Math.floor(Math.random() * chars.length)];
-            }
-            return code;
-        }
-        
-        async function findUserByFriendCode(code) {
-            try {
-                const snapshot = await db.collection('users')
-                    .where('friendCode', '==', code.toUpperCase())
-                    .limit(1)
-                    .get();
-                
-                if (snapshot.empty) return null;
-                
-                const doc = snapshot.docs[0];
-                return { userId: doc.id, ...doc.data() };
-            } catch (error) {
-                console.error('Error finding user:', error);
-                return null;
-            }
-        }
-        
-        async function sendFriendRequest(friendCodeInput) {
-            if (!currentUser) {
-                alert('Please sign in to add friends!');
-                return false;
-            }
-            
-            const friend = await findUserByFriendCode(friendCodeInput);
-            
-            if (!friend) {
-                alert('❌ Friend code not found!');
-                return false;
-            }
-            
-            if (friend.userId === currentUser.uid) {
-                alert('❌ You can\'t add yourself!');
-                return false;
-            }
-            
-            if (friendsList.includes(friend.userId)) {
-                alert('✅ Already friends!');
-                return false;
-            }
-            
-            try {
-                const friendRef = db.collection('friends').doc(friend.userId);
-                await friendRef.set({
-                    pendingRequests: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-                }, { merge: true });
-                
-                alert(`✅ Friend request sent to ${friend.displayName}!`);
-                return true;
-            } catch (error) {
-                console.error('Error sending friend request:', error);
-                alert('❌ Failed to send friend request');
-                return false;
-            }
-        }
-        
-        async function acceptFriendRequest(userId) {
-            if (!currentUser) return false;
-            
-            try {
-                const batch = db.batch();
-                
-                const myFriendsRef = db.collection('friends').doc(currentUser.uid);
-                batch.set(myFriendsRef, {
-                    friendsList: firebase.firestore.FieldValue.arrayUnion(userId),
-                    pendingRequests: firebase.firestore.FieldValue.arrayRemove(userId)
-                }, { merge: true });
-                
-                const theirFriendsRef = db.collection('friends').doc(userId);
-                batch.set(theirFriendsRef, {
-                    friendsList: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-                }, { merge: true });
-                
-                await batch.commit();
-                
-                friendsList.push(userId);
-                pendingRequests = pendingRequests.filter(id => id !== userId);
-                
-                return true;
-            } catch (error) {
-                console.error('Error accepting friend request:', error);
-                return false;
-            }
-        }
-        
-        async function loadFriendsData() {
-            if (!currentUser) return;
-            
-            try {
-                const friendsDoc = await db.collection('friends').doc(currentUser.uid).get();
-                
-                if (friendsDoc.exists) {
-                    const data = friendsDoc.data();
-                    friendsList = data.friendsList || [];
-                    pendingRequests = data.pendingRequests || [];
-                    
-                    console.log(`Loaded ${friendsList.length} friends, ${pendingRequests.length} pending requests`);
-                }
-            } catch (error) {
-                console.error('Error loading friends data:', error);
-            }
-        }
-        
-        async function getFriendProfile(userId) {
-            try {
-                const userDoc = await db.collection('users').doc(userId).get();
-                
-                if (!userDoc.exists) return null;
-                
-                const data = userDoc.data();
-                
-                const showcaseData = [];
-                if (data.showcaseGrids && data.showcaseGrids.length > 0) {
-                    for (const rollNumber of data.showcaseGrids) {
-                        const gridItem = data.storage.find(item => item.rollNumber === rollNumber);
-                        if (gridItem) {
-                            showcaseData.push({
-                                ...gridItem,
-                                grid: typeof gridItem.grid === 'string' ? decompressGrid(gridItem.grid) : gridItem.grid
-                            });
-                        }
-                    }
-                }
-                
-                return {
-                    displayName: data.displayName || 'Player',
-                    photoURL: data.photoURL || '',
-                    totalRolls: data.totalRolls || 0,
-                    bestTier: data.bestTier || null,
-                    showcaseGrids: showcaseData
-                };
-            } catch (error) {
-                console.error('Error loading friend profile:', error);
-                return null;
-            }
-        }
-
         // ===== FIREBASE AUTH & DATA FUNCTIONS =====
         
         // Save game data to Firestore
@@ -2530,10 +2311,6 @@
                     totalRolls,
                     colorCoins,
                     bestTier,
-                    displayName: currentUser.displayName || 'Player',
-                    photoURL: currentUser.photoURL || '',
-                    friendCode: friendCode || generateFriendCode(),
-                    showcaseGrids: showcaseGrids || [],
                     collectedScenicPieces, // Save scenic tracking!
                     storage: storage.map(item => {
                         // Compress the grid to save MASSIVE space
@@ -2595,9 +2372,6 @@
                     totalRolls = data.totalRolls || 0;
                     colorCoins = data.colorCoins || 0;
                     bestTier = data.bestTier || null;
-                    
-                    friendCode = data.friendCode || generateFriendCode();
-                    showcaseGrids = data.showcaseGrids || [];
                     
                     // Load scenic tracking!
                     if (data.collectedScenicPieces) {
@@ -2726,7 +2500,6 @@
                 
                 // Load saved game data
                 await loadGameData();
-                await loadFriendsData();
             } else {
                 currentUser = null;
                 signedInView.style.display = 'none';
@@ -3840,42 +3613,6 @@
             updateStorageDisplay();
         });
 
-        
-
-        // ===== FRIENDS SYSTEM HANDLERS =====
-        
-        // Show friends button when signed in
-        firebase.auth().onAuthStateChanged(user => {
-            const friendsBtn = document.getElementById('friends-btn');
-            if (user && friendsBtn) {
-                friendsBtn.style.display = 'block';
-            } else if (friendsBtn) {
-                friendsBtn.style.display = 'none';
-            }
-        });
-        
-        // Open friends modal
-        const friendsBtnEl = document.getElementById('friends-btn');
-        if (friendsBtnEl) {
-            friendsBtnEl.addEventListener('click', async () => {
-                if (!currentUser) {
-                    alert('Please sign in to use friends features!');
-                    return;
-                }
-                
-                document.getElementById('my-friend-code').textContent = friendCode || '------';
-                document.getElementById('friends-modal').classList.add('active');
-            });
-        }
-        
-        // Close friends modal
-        const closeFriendsBtn = document.getElementById('close-friends-modal');
-        if (closeFriendsBtn) {
-            closeFriendsBtn.addEventListener('click', () => {
-                document.getElementById('friends-modal').classList.remove('active');
-            });
-        }
-
         // Initialize
         initializeScenicTracking();
         updateStats();
@@ -3887,16 +3624,5 @@
         <a href="/contact.html" style="color: #FFD700; margin: 0 15px; text-decoration: none;">Contact</a> | 
         <a href="/privacy-policy.html" style="color: #FFD700; margin: 0 15px; text-decoration: none;">Privacy Policy</a>
     </div>
-
-    
-    <!-- Friends Modal -->
-    <div class="friends-modal" id="friends-modal">
-        <div class="friends-modal-content">
-            <h2>👥 Friends System</h2>
-            <p>Your Friend Code: <strong id="my-friend-code">------</strong></p>
-            <button id="close-friends-modal" style="padding: 10px; margin-top: 20px;">Close</button>
-        </div>
-    </div>
-
 </body>
 </html>
