@@ -3054,6 +3054,17 @@
             }
             // If luck boost is active, increase chance of matching first color (60-100%)
             else if (luckBoostActive) {
+                // Check if player has enough coins
+                if (colorCoins < 100) {
+                    alert('❌ Not enough coins for boosted roll! Need 100 coins.\n\nBoost has been turned off.');
+                    luckBoostActive = false;
+                    updateBoostUI();
+                    return; // Don't roll
+                }
+                
+                // Charge 100 coins for this boosted roll
+                colorCoins -= 100;
+                
                 boostPercent = generateBoostPercentage(60, 100);
                 for (let i = 1; i < TOTAL_CELLS; i++) {
                     const matchChance = Math.random();
@@ -3064,9 +3075,8 @@
                         grid.push(randomColor);
                     }
                 }
-                console.log(`⚡ Luck Boost used! Boost strength: ${(boostPercent * 100).toFixed(1)}%`);
-                luckBoostActive = false; // Consume the boost
-                updateBoostUI();
+                console.log(`⚡ Luck Boost used! Boost strength: ${(boostPercent * 100).toFixed(1)}% | Cost: 100 coins`);
+                // Boost stays active until manually turned off
             } 
             // If this is a hidden lucky roll, increase chance slightly (20-59%)
             else if (nextRollIsLucky) {
@@ -3185,18 +3195,19 @@
             const rollSection = document.querySelector('.roll-section');
             
             if (luckBoostActive) {
-                boostStatus.innerHTML = '<div class="boost-indicator">✨ LUCK BOOST ACTIVE ✨</div>';
+                boostStatus.innerHTML = '<div class="boost-indicator">✨ LUCK BOOST ACTIVE (100 coins/roll) ✨</div>';
                 rollSection.classList.add('boost-active');
-                boostBtn.disabled = true;
+                boostBtn.textContent = '🛑 Turn Off Boost';
+                boostBtn.disabled = false; // Can always turn off
+                boostBtn.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)';
             } else {
                 boostStatus.innerHTML = '';
                 rollSection.classList.remove('boost-active');
+                boostBtn.textContent = '⚡ Activate Luck Boost (100 coins/roll)';
+                boostBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
                 
-                if (colorCoins >= 100) {
-                    boostBtn.disabled = false;
-                } else {
-                    boostBtn.disabled = true;
-                }
+                // Can always activate (free), just costs per roll
+                boostBtn.disabled = false;
             }
         }
 
@@ -3535,9 +3546,15 @@
         });
 
         document.getElementById('boost-btn').addEventListener('click', () => {
-            if (colorCoins >= 100) {
-                colorCoins -= 100;
+            if (luckBoostActive) {
+                // Turn OFF the boost
+                luckBoostActive = false;
+                updateBoostUI();
+                updateStats();
+            } else {
+                // Turn ON the boost (free to activate, costs 100 per roll)
                 luckBoostActive = true;
+                updateBoostUI();
                 updateStats();
             }
         });
